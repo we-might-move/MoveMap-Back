@@ -12,6 +12,7 @@ import java.time.LocalTime;
 
 @Entity
 @Getter
+@Table(name = "check_in_record")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CheckInRecord {
 

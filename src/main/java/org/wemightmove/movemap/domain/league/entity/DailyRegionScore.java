@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @Table(
+        name = "daily_region_score",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_daily_region_score_region_date", columnNames = {"region_id", "date"})
         }

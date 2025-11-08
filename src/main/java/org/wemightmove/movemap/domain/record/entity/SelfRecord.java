@@ -5,13 +5,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.member.entity.Member;
-import org.wemightmove.movemap.global.enums.ExerciseType;
+import org.wemightmove.movemap.global.enums.FacilityType;
 
 import java.time.Duration;
 import java.time.LocalDate;
 
 @Entity
 @Getter
+@Table(name = "self_record")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SelfRecord {
 
@@ -29,7 +30,7 @@ public class SelfRecord {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "exercise_type", length = 50, nullable = false)
-    private ExerciseType exerciseType;
+    private FacilityType exerciseType;
 
     @Column(name = "duration", columnDefinition = "interval", nullable = false)
     private Duration duration;

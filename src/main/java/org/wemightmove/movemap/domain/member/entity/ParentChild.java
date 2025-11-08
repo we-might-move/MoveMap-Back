@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Table(name = "parent_child")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ParentChild {
 

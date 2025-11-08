@@ -10,6 +10,7 @@ import org.wemightmove.movemap.global.enums.LeagueType;
 
 @Entity
 @Getter
+@Table(name = "league_status")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LeagueStatus extends BaseTimeEntity {
 

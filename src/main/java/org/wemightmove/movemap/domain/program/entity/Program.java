@@ -4,14 +4,18 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.Point;
 import org.wemightmove.movemap.global.enums.FacilityType;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
 @Getter
+@Table(name = "program")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Program {
     @Id
@@ -29,6 +33,7 @@ public class Program {
     @Column(name = "name", length = 200, nullable = false)
     private String name;
 
+    @JdbcTypeCode(SqlTypes.GEOMETRY)
     @Column(name = "location", columnDefinition = "geometry(Point,4326)", nullable = false)
     private Point location;
 

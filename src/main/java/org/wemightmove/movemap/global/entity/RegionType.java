@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
+@Table(name = "region_type")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RegionType {
 

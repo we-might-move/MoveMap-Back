@@ -9,6 +9,7 @@ import org.wemightmove.movemap.global.entity.RegionType;
 
 @Entity
 @Getter
+@Table(name = "weekly_region_score")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WeeklyRegionScore extends BaseTimeEntity {
 

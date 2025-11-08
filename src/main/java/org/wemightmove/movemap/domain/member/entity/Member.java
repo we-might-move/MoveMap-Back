@@ -8,6 +8,7 @@ import org.wemightmove.movemap.global.entity.BaseTimeEntity;
 
 @Entity
 @Getter
+@Table(name = "member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseTimeEntity {
 

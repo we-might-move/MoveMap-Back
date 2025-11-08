@@ -8,6 +8,7 @@ import org.wemightmove.movemap.domain.program.entity.Program;
 
 @Entity
 @Getter
+@Table(name = "member_program")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberProgram {
 
