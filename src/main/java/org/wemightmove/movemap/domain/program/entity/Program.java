@@ -50,7 +50,6 @@ public class Program {
     @Column(name = "begin_date")
     private LocalDate beginDate;
 
-    /** 프로그램 종료일자 */
     @Column(name = "end_date")
     private LocalDate endDate;
 

@@ -15,12 +15,10 @@ public class ParentChild {
     @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 
-    /** 부모 회원 (Member 참조) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "parent_id", nullable = false)
     private Member parent;
 
-    /** 자식 회원 (Member 참조) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "child_id", nullable = false)
     private Member child;

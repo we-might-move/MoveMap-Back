@@ -19,7 +19,7 @@ public class Member extends BaseTimeEntity {
     @Column(name = "login_id", length = 20, nullable = false, unique = true)
     private String loginId;
 
-    @Column(name = "password", length = 20, nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Column(name = "role", length = 20, nullable = false)
