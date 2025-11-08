@@ -37,3 +37,7 @@ out/
 .vscode/
 src/main/resources/application-develop.yml
 src/main/resources/application-deploy.yml
+
+### docker ###
+docker-compose.yml
+postgres-data
