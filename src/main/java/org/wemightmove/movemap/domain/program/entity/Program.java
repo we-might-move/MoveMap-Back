@@ -1,0 +1,74 @@
+package org.wemightmove.movemap.domain.program.entity;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.locationtech.jts.geom.Point;
+import org.wemightmove.movemap.global.enums.FacilityType;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Program {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", updatable = false, nullable = false)
+    private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "facility_type", length = 50, nullable = false)
+    private FacilityType facilityType;
+
+    @Column(name = "facility_subtype", length = 200)
+    private String facilitySubtype;
+
+    @Column(name = "name", length = 200, nullable = false)
+    private String name;
+
+    @Column(name = "location", columnDefinition = "geometry(Point,4326)", nullable = false)
+    private Point location;
+
+    @Column(name = "latitude", precision = 10, scale = 8, nullable = false)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 11, scale = 8, nullable = false)
+    private BigDecimal longitude;
+
+    @Column(name = "region_cd", length = 20, nullable = false)
+    private String regionCode;
+
+    @Column(name = "address", length = 500, nullable = false)
+    private String address;
+
+    @Column(name = "hmpg_url", length = 200)
+    private String hmpgUrl;
+
+    @Column(name = "begin_date")
+    private LocalDate beginDate;
+
+    /** 프로그램 종료일자 */
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    @Column(name = "weekday_number")
+    private Integer weekdayNumber;
+
+    @Column(name = "price")
+    private Integer price;
+
+    @Column(name = "start_time")
+    private LocalTime startTime;
+
+    @Column(name = "end_time")
+    private LocalTime endTime;
+
+    @Column(name = "target")
+    private Integer target;
+
+    @Column(name = "capacity")
+    private Integer capacity;
+}

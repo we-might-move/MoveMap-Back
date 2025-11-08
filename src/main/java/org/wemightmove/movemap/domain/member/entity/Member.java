@@ -1,0 +1,45 @@
+package org.wemightmove.movemap.domain.member.entity;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.wemightmove.movemap.global.entity.BaseTimeEntity;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Member extends BaseTimeEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", updatable = false)
+    private Long id;
+
+    @Column(name = "login_id", length = 20, nullable = false, unique = true)
+    private String loginId;
+
+    @Column(name = "password", length = 20, nullable = false)
+    private String password;
+
+    @Column(name = "role", length = 20, nullable = false)
+    private String role;
+
+    @Column(name = "school", length = 100)
+    private String school;
+
+    @Column(name = "nickname", length = 20, nullable = false)
+    private String nickname;
+
+    @Column(name = "region_cd", length = 20, nullable = false)
+    private String regionCode;
+
+    @Column(name = "uuid", length = 50, nullable = false)
+    private String uuid;
+
+    @Column(name = "height")
+    private double height;
+
+    @Column(name = "weight")
+    private double weight;
+}
