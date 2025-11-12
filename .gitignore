@@ -37,6 +37,7 @@ out/
 .vscode/
 src/main/resources/application-develop.yml
 src/main/resources/application-deploy.yml
+src/main/resources/application-redis.yml
 
 ### docker ###
 docker-compose.yml
