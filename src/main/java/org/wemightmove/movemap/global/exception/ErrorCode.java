@@ -29,7 +29,15 @@ public enum ErrorCode {
     INVALID_TOKEN(401, 2100, "잘못된 토큰입니다."),
     NO_COOKIE(404, 2101, "쿠키가 존재하지 않습니다."),
     EXPIRED_ACCESS_TOKEN(401, 2300, "만료된 엑세스 토큰입니다."),
-    EXPIRED_REFRESH_TOKEN(401, 2301, "만료된 리프레쉬 토큰입니다.")
+    EXPIRED_REFRESH_TOKEN(401, 2301, "만료된 리프레쉬 토큰입니다."),
+
+    /*
+     * 리소스 관련 오류 (Member)
+     * (3000 ~ 3999)
+     */
+
+    MEMBER_NOT_FOUND(404, 3000, "사용자를 찾을 수 없습니다."),
+    MEMBER_DELETED(404, 3001, "탈퇴한 사용자입니다.")
 
     ;
 

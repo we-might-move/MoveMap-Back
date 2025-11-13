@@ -1,0 +1,45 @@
+package org.wemightmove.movemap.domain.auth.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
+import org.wemightmove.movemap.global.exception.CustomException;
+import org.wemightmove.movemap.global.exception.ErrorCode;
+import org.wemightmove.movemap.global.jwt.JwtTokenProvider;
+import org.wemightmove.movemap.global.jwt.TokenDto;
+import org.wemightmove.movemap.global.security.CustomUserDetails;
+import org.wemightmove.movemap.global.util.RedisService;
+
+import java.time.Duration;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService{
+
+    private final RedisService redisService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
+
+    @Override
+    public TokenDto login(LoginRequest request) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.email(), request.password()
+                    )
+            );
+
+            String accessToken = jwtTokenProvider.generateAccessToken(authentication);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
+
+            redisService.setValuesWithTimeout("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId(), refreshToken, Duration.ofMillis(jwtTokenProvider.getRefreshTokenValidity()));
+            return new TokenDto(accessToken, refreshToken);
+        } catch(BadCredentialsException e) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED);
+        }
+    }
+}
