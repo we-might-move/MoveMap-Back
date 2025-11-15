@@ -42,4 +42,26 @@ public class AuthServiceImpl implements AuthService{
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
     }
+
+    @Override
+    public TokenDto reissue(String accessToken, String refreshToken) {
+
+        if(!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
+        Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
+        String storedRefreshToken = (String) redisService.getValues("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId());
+
+        if(!(refreshToken.equals(storedRefreshToken))){
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(authentication);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(authentication);
+
+        redisService.setValuesWithTimeout("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId(), newRefreshToken, Duration.ofMillis(jwtTokenProvider.getRefreshTokenValidity()));
+
+        return new TokenDto(newAccessToken, newRefreshToken);
+    }
 }

@@ -5,4 +5,5 @@ import org.wemightmove.movemap.global.jwt.TokenDto;
 
 public interface AuthService {
     TokenDto login(LoginRequest request);
+    TokenDto reissue(String accessToken, String refreshToken);
 }
