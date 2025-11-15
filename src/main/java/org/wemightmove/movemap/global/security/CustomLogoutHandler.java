@@ -19,13 +19,10 @@ public class CustomLogoutHandler implements LogoutHandler {
 
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        log.info("  dd");
         if(authentication != null && authentication.getName() != null) {
             redisService.deleteValues("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId());
-            log.info("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId());
             SecurityContextLogoutHandler securityContextLogoutHandler = new SecurityContextLogoutHandler();
             securityContextLogoutHandler.logout(request, response, authentication);
-        } else {
         }
     }
 }
