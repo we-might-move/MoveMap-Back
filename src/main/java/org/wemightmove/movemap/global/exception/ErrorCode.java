@@ -28,8 +28,7 @@ public enum ErrorCode {
     INVALID_JWT_SIGNATURE(401, 2003, "잘못된 JWT 서명입니다."),
     INVALID_TOKEN(401, 2100, "잘못된 토큰입니다."),
     NO_COOKIE(404, 2101, "쿠키가 존재하지 않습니다."),
-    EXPIRED_ACCESS_TOKEN(401, 2300, "만료된 엑세스 토큰입니다."),
-    EXPIRED_REFRESH_TOKEN(401, 2301, "만료된 리프레쉬 토큰입니다."),
+    EXPIRED_TOKEN(401, 2300, "만료된 토큰입니다."),
 
     /*
      * 리소스 관련 오류 (Member)
