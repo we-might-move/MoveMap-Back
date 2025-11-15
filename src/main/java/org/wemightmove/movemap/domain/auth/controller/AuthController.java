@@ -6,6 +6,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
 import org.wemightmove.movemap.domain.auth.dto.response.LoginResponse;
@@ -32,10 +33,16 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(tokens.accessToken()));
     }
 
+    @Operation(summary = "로그아웃", description = "로그아웃을 진행합니다.")
+    @PostMapping("/logout")
+    public void logout() {
+
+    }
+
     @Operation(summary = "토큰 인증 테스트", description = "토큰 인증 테스트용 API입니다. 추후 삭제 예정입니다.")
     @GetMapping
     public ResponseEntity<String> test() {
-        return ResponseEntity.ok("OK");
+        return ResponseEntity.ok(SecurityContextHolder.getContext().getAuthentication().getName());
     }
 
     private void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
