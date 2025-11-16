@@ -71,6 +71,7 @@ jobs:
             echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" | sudo tee -a /home/ubuntu/app/.env
             echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" | sudo tee -a /home/ubuntu/app/.env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a /home/ubuntu/app/.env
+            echo "${{ secrets.DOCKER_COMPOSE_YML}}" | sudo tee /home/ubuntu/app/docker-compose.yml
             cd /home/ubuntu/app
             sudo docker-compose down
             sudo docker pull ${{ secrets.DOCKER_REPO}}:latest
