@@ -33,7 +33,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response){
         TokenDto tokens = authService.login(request);
-        addCookie(response, "refreshToken", tokens.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity());
+        addCookie(response, "refreshToken", tokens.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
         return ResponseEntity.ok(new LoginResponse(tokens.accessToken()));
     }
 
@@ -49,7 +49,7 @@ public class AuthController {
         String accessToken = getAccessToken(request);
         String refreshToken = getCookie(request, "refreshToken");
         TokenDto tokens = authService.reissue(accessToken, refreshToken);
-        addCookie(response, "refreshToken", tokens.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity());
+        addCookie(response, "refreshToken", tokens.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
         return ResponseEntity.ok(new LoginResponse(tokens.accessToken()));
     }
 
