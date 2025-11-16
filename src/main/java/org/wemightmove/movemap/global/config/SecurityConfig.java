@@ -22,6 +22,8 @@ import org.wemightmove.movemap.global.jwt.JwtTokenProvider;
 import org.wemightmove.movemap.global.security.CustomLogoutHandler;
 import org.wemightmove.movemap.global.security.ExceptionHandlerFilter;
 
+import java.util.List;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -77,8 +79,8 @@ public class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(corsConfigProperties.getAllowedOrigins());
         cors.setAllowedMethods(corsConfigProperties.getAllowedMethods());
-        cors.setAllowedHeaders(corsConfigProperties.getAllowedHeaders());
-        cors.setExposedHeaders(corsConfigProperties.getExposedHeaders());
+        cors.setAllowedHeaders(List.of("*"));
+        cors.setExposedHeaders(List.of("*"));
         cors.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
