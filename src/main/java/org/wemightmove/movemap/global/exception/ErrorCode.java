@@ -29,8 +29,19 @@ public enum ErrorCode {
     INVALID_TOKEN(401, 2100, "잘못된 토큰입니다."),
     NO_COOKIE(404, 2101, "쿠키가 존재하지 않습니다."),
     EXPIRED_ACCESS_TOKEN(401, 2300, "만료된 엑세스 토큰입니다."),
-    EXPIRED_REFRESH_TOKEN(401, 2301, "만료된 리프레쉬 토큰입니다.")
+    EXPIRED_REFRESH_TOKEN(401, 2301, "만료된 리프레쉬 토큰입니다."),
 
+    /*
+     * Redis 관련 오류
+     * 5001
+     */
+    FAIL_SERIALIZATION(500, 5001, "직렬화/역직렬화에 실패했습니다."),
+    EXPIRED_INVITATION(401, 5002, "만료된 초대입니다."),
+
+    /*
+     * Member 관련 오류
+     */
+    MEMBER_NOT_FOUND(404, 4001, "멤버가 존재하지 않습니다.")
     ;
 
     private final int status;

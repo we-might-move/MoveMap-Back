@@ -38,6 +38,7 @@ out/
 src/main/resources/application-develop.yml
 src/main/resources/application-deploy.yml
 src/main/resources/application-redis.yml
+src/main/resources/test.sql
 
 ### docker ###
 docker-compose.yml

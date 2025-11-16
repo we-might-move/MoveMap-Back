@@ -43,4 +43,7 @@ public class Member extends BaseTimeEntity {
 
     @Column(name = "weight")
     private double weight;
+
+    @Column(name = "invite_code", unique = true)
+    private String inviteCode;
 }
