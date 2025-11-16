@@ -35,7 +35,7 @@ public class Member extends BaseTimeEntity {
     @Column(name = "region_cd", length = 20, nullable = false)
     private String regionCode;
 
-    @Column(name = "uuid", length = 50, nullable = false)
+    @Column(name = "uuid", length = 50, nullable = false, unique = true)
     private String uuid;
 
     @Column(name = "height")
@@ -43,7 +43,4 @@ public class Member extends BaseTimeEntity {
 
     @Column(name = "weight")
     private double weight;
-
-    @Column(name = "invite_code", unique = true)
-    private String inviteCode;
 }

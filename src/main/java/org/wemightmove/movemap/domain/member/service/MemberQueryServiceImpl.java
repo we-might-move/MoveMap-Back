@@ -89,7 +89,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
 
 
         if (parentIdStrings == null || parentIdStrings.isEmpty()) {
-            return new ReceivedInviteResponse(child.getInviteCode(), parentList, inviteInfoList);
+            return new ReceivedInviteResponse(child.getUuid(), parentList, inviteInfoList);
         }
 
 
@@ -115,7 +115,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
                 throw new CustomException(ErrorCode.FAIL_SERIALIZATION);
             }
         }
-        return new ReceivedInviteResponse(child.getInviteCode(), parentList, inviteInfoList);
+        return new ReceivedInviteResponse(child.getUuid(), parentList, inviteInfoList);
     }
 
     private String buildInviteKey(Long parentId, Long childId) {
