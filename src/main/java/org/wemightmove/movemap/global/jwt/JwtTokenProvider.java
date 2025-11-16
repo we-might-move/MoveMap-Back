@@ -51,12 +51,17 @@ public class JwtTokenProvider {
     }
 
     public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        Claims claims;
+        try {
+            claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
 
+        } catch (ExpiredJwtException e) {
+            claims = e.getClaims();
+        }
         Long memberId = Long.valueOf(claims.getSubject());
 
         CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserById(memberId);
