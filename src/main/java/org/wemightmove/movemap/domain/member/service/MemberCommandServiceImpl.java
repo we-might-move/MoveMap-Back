@@ -44,33 +44,33 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     @Transactional
     @Override
     public SendInviteResponse sendInvite(Long parentId, String inviteCode) {
-        // 1. 자식, 부모 조회
+        // 자식과, 부모 조회
         Member child = memberRepository.findByUuid(inviteCode).orElseThrow(() -> new CustomException(ErrorCode.INVALID_INVITE_CODE));
         Member parent = memberRepository.findById(parentId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 2. 본인에게 초대 방지
+        // 본인의 초대 코드를 입력했는지 확인
         if (parentId.equals(child.getId())) {
             throw new CustomException(ErrorCode.INVALID_INVITE_MEMBER);
         }
 
-        // 3. 이미 연결되어 있는지 확인
+        // 이미 연결된 부모-자식인지 확인
         if (parentChildRepository.existsByParentAndChild(parent, child)) {
             throw new CustomException(ErrorCode.ALREADY_CONNECTED);
         }
 
-        // 4. 이미 초대를 보냈는지 확인
+        // 이미 초대 받았는지 확인
         String inviteKey = buildInviteKey(parent.getId(), child.getId());
         if (Boolean.TRUE.equals(redisTemplate.hasKey(inviteKey))) {
             throw new CustomException(ErrorCode.ALREADY_SEND_INVITE);
         }
 
-        // 5. 초대 정보 생성
+        // 초대 정보 생성
         InviteInfo inviteInfo = InviteInfo.of(parent.getId(), child.getId(), LocalDateTime.now());
 
         try {
             String value = objectMapper.writeValueAsString(inviteInfo);
 
-            // 6. Redis에 초대 정보 저장 (TTL: 7일)
+            // Redis 에 초대 정보 저장
             redisTemplate.opsForValue().set(
                     inviteKey,
                     value,
@@ -78,12 +78,12 @@ public class MemberCommandServiceImpl implements MemberCommandService {
                     TimeUnit.DAYS
             );
 
-            // 7. 부모의 "보낸 목록"에 추가
+            // 부모의 보낸 목록에 추가
             String sentListKey = SENT_LIST_PREFIX + parentId;
             redisTemplate.opsForSet().add(sentListKey, child.getId().toString());
             redisTemplate.expire(sentListKey, inviteExpirationDays, TimeUnit.DAYS);
 
-            // 8. 자식의 "받은 목록"에 추가
+            // 자식의 받은 목록에 추가
             String receivedListKey = RECEIVED_LIST_PREFIX + child.getId();
             redisTemplate.opsForSet().add(receivedListKey, parentId.toString());
             redisTemplate.expire(receivedListKey, inviteExpirationDays, TimeUnit.DAYS);
@@ -92,7 +92,6 @@ public class MemberCommandServiceImpl implements MemberCommandService {
             throw new CustomException(ErrorCode.FAIL_SERIALIZATION);
         }
 
-        // 여기서
         return new SendInviteResponse(child.getId(), child.getNickname());
     }
 
