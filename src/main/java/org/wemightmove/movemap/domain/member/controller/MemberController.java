@@ -5,12 +5,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.wemightmove.movemap.domain.member.dto.request.SendInvitedRequest;
 import org.wemightmove.movemap.domain.member.dto.response.ReceivedInviteResponse;
+import org.wemightmove.movemap.domain.member.dto.response.SendInviteResponse;
 import org.wemightmove.movemap.domain.member.dto.response.SentInviteResponse;
+import org.wemightmove.movemap.domain.member.service.MemberCommandService;
 import org.wemightmove.movemap.domain.member.service.MemberQueryService;
 
 @RestController
@@ -20,6 +20,7 @@ import org.wemightmove.movemap.domain.member.service.MemberQueryService;
 public class MemberController {
 
     private final MemberQueryService memberQueryService;
+    private final MemberCommandService memberCommandService;
 
     /**
      * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
@@ -41,5 +42,16 @@ public class MemberController {
             @RequestParam("memberId") Long memberId
     ) {
         return ResponseEntity.ok(memberQueryService.getReceivedInviteList(memberId));
+    }
+
+    /**
+     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
+     */
+    @Operation(summary = "초대 보내기(부모 사용)")
+    @PostMapping("/invitations")
+    public ResponseEntity<SendInviteResponse> sendInvitation(
+            @RequestParam("memberId") Long memberId, @RequestBody SendInvitedRequest sendInvitedRequest
+            ) {
+        return ResponseEntity.ok(memberCommandService.sendInvite(memberId, sendInvitedRequest.childUuid()));
     }
 }

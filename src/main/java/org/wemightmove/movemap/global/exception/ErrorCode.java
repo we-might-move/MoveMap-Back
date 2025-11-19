@@ -41,7 +41,11 @@ public enum ErrorCode {
     /*
      * Member 관련 오류
      */
-    MEMBER_NOT_FOUND(404, 4001, "멤버가 존재하지 않습니다.")
+    MEMBER_NOT_FOUND(404, 4001, "멤버가 존재하지 않습니다."),
+    INVALID_INVITE_CODE(401, 4002, "잘못된 초대 코드입니다."),
+    ALREADY_CONNECTED(400, 4003, "이미 연결된 관계입니다"),
+    ALREADY_SEND_INVITE(400, 4004, "이미 초대를 보냈습니다"),
+    INVALID_INVITE_MEMBER(400, 4005, "본인에게는 초대를 보낼 수 없습니다")
     ;
 
     private final int status;

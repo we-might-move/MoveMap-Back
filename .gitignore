@@ -35,11 +35,16 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### yml, test code ###
 src/main/resources/application-develop.yml
 src/main/resources/application-deploy.yml
 src/main/resources/application-redis.yml
+src/main/resources/application-loadtest.yml
 src/main/resources/test_data/
+src/main/java/org/wemightmove/movemap/domain/stress_test/
 
 ### docker ###
 docker-compose.yml
 postgres-data
+Dockerfile
