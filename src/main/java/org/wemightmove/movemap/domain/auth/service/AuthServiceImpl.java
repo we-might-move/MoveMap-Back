@@ -81,6 +81,8 @@ public class AuthServiceImpl implements AuthService{
         KakaoProfileResponse kakaoProfileResponse = kakaoClient.getUserInfo(kakaoTokenResponse.accessToken());
         Member member = memberRepository.findByKakaoId(kakaoProfileResponse.id()).orElse(null);
 
+        System.out.println(kakaoProfileResponse.id());
+
         if(member == null) {
             return KakaoLoginResponse.of(kakaoProfileResponse.id());
         }

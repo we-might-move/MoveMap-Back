@@ -20,6 +20,7 @@ import org.wemightmove.movemap.global.exception.ErrorCode;
 @RequiredArgsConstructor
 public class KakaoClient {
 
+    private final RestClient restClient = RestClient.builder().build();
     private final RestClient restClient = RestClient.builder()
             .requestFactory(createRequestFactory())
             .defaultStatusHandler(status -> status.is4xxClientError() || status.is5xxServerError(),
