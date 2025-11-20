@@ -21,6 +21,7 @@ import org.wemightmove.movemap.global.exception.ErrorCode;
 public class KakaoClient {
 
     private final RestClient restClient = RestClient.builder()
+            .requestFactory(createRequestFactory())
             .defaultStatusHandler(status -> status.is4xxClientError() || status.is5xxServerError(),
                     (request, response) -> {
                         throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
