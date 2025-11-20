@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -19,6 +21,7 @@ import org.wemightmove.movemap.global.exception.ErrorCode;
 public class KakaoClient {
 
     private final RestClient restClient = RestClient.builder()
+            .requestFactory(createRequestFactory())
             .defaultStatusHandler(status -> status.is4xxClientError() || status.is5xxServerError(),
                     (request, response) -> {
                         throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
@@ -69,5 +72,12 @@ public class KakaoClient {
         } catch (RestClientException e) {
             throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
         }
+    }
+
+    private ClientHttpRequestFactory createRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return factory;
     }
 }
