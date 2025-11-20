@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.service.RecordService;
@@ -33,6 +34,13 @@ public class RecordController {
     @PostMapping("/steps")
     public ResponseEntity<Void> stepsRecordSync(@RequestBody @Valid StepsRecordSyncRequest request) {
         recordService.syncStepsRecord(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Operation(summary = "체크인", description = "사용자의 체크인 기록을 추가합니다.")
+    @PostMapping("/checkin")
+    public ResponseEntity<Void> checkIn(@RequestBody CheckInRecordAddRequest request) {
+        recordService.checkIn(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

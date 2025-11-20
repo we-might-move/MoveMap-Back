@@ -2,6 +2,7 @@ package org.wemightmove.movemap.domain.record.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.facility.entity.Facility;
@@ -41,4 +42,11 @@ public class CheckInRecord {
     @Column(name = "duration_minutes", nullable = false)
     private int durationMinutes;
 
+    @Builder
+    public CheckInRecord(Member member, Facility facility, LocalDateTime checkInAt) {
+        this.member = member;
+        this.facility = facility;
+        this.date = checkInAt.toLocalDate();
+        this.checkInAt = checkInAt;
+    }
 }
