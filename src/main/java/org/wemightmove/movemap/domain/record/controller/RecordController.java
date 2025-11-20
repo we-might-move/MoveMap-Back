@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
+import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.service.RecordService;
 
 @RestController
@@ -25,6 +26,13 @@ public class RecordController {
     @PostMapping("/self")
     public ResponseEntity<Void> selfRecordAdd(@RequestBody @Valid SelfRecordAddRequest request) {
         recordService.addSelfRecord(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Operation(summary = "걷기 기록 동기화", description = "사용자의 오늘자 걸음 수 데이터를 서버에 업로드하여 최신 상태로 동기화합니다.")
+    @PostMapping("/steps")
+    public ResponseEntity<Void> stepsRecordSync(@RequestBody @Valid StepsRecordSyncRequest request) {
+        recordService.syncStepsRecord(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
