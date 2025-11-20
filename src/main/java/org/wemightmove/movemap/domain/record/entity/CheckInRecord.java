@@ -8,7 +8,7 @@ import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.member.entity.Member;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -32,9 +32,13 @@ public class CheckInRecord {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
-    @Column(name = "type")
-    private boolean type;
+    @Column(name = "check_in_at")
+    private LocalDateTime checkInAt;
 
-    @Column(name = "time", nullable = false)
-    private LocalTime time;
+    @Column(name = "check_out_at")
+    private LocalDateTime checkOutAt;
+
+    @Column(name = "duration_minutes", nullable = false)
+    private int durationMinutes;
+
 }
