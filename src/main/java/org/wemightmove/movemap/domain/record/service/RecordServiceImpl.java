@@ -13,6 +13,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
+import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
 import org.wemightmove.movemap.domain.record.entity.StepsRecord;
@@ -95,6 +96,16 @@ public class RecordServiceImpl implements RecordService {
                 });
         record.checkout(request.checkOutAt());
         checkInRecordRepository.save(record);
+    }
+
+    @Override
+    public CheckInStatusResponse findCheckInStatus() {
+        Member member = getCurrentMember();
+        LocalDate today = LocalDate.now();
+        boolean isCheckedIn = checkInRecordRepository
+                .findByMemberAndDateAndCheckOutAtIsNull(member, today)
+                .isPresent();
+        return new CheckInStatusResponse(isCheckedIn);
     }
 
     private Member getCurrentMember() {
