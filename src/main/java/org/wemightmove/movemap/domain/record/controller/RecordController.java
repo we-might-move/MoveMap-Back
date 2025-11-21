@@ -11,6 +11,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
+import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.service.RecordService;
 
 @RestController
@@ -56,6 +57,12 @@ public class RecordController {
     public ResponseEntity<Void> checkOut(@RequestBody @Valid CheckInRecordModifyRequest request) {
         recordService.checkOut(request);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "체크인 상태 조회", description = "사용자가 현재 체크인 중인지 상태를 조회합니다.")
+    @GetMapping("/checkin/status")
+    public ResponseEntity<CheckInStatusResponse> checkInStatus() {
+        return ResponseEntity.ok(recordService.findCheckInStatus());
     }
 
 }
