@@ -6,11 +6,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
+import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.service.RecordService;
@@ -42,6 +40,13 @@ public class RecordController {
     public ResponseEntity<Void> checkIn(@RequestBody CheckInRecordAddRequest request) {
         recordService.checkIn(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Operation(summary = "체크아웃", description = "")
+    @PatchMapping("/checkout")
+    public ResponseEntity<Void> checkOut(@RequestBody CheckInRecordModifyRequest request) {
+        recordService.checkOut(request);
+        return ResponseEntity.ok().build();
     }
 
 }

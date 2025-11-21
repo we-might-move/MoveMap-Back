@@ -10,6 +10,7 @@ import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
+import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
@@ -82,6 +83,17 @@ public class RecordServiceImpl implements RecordService {
                 .checkInAt(request.checkInAt())
                 .build();
 
+        checkInRecordRepository.save(record);
+    }
+
+    @Override
+    public void checkOut(CheckInRecordModifyRequest request) {
+        Member member = getCurrentMember();
+        CheckInRecord record = checkInRecordRepository.findByMemberAndDateAndCheckOutAtIsNull(member, request.checkOutAt().toLocalDate())
+                .orElseThrow(() -> {
+                    throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
+                });
+        record.checkout(request.checkOutAt());
         checkInRecordRepository.save(record);
     }
 
