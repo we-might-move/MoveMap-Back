@@ -2,6 +2,7 @@ package org.wemightmove.movemap.global.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
@@ -36,14 +37,15 @@ public enum ErrorCode {
      * 5001
      */
     FAIL_SERIALIZATION(500, 5001, "직렬화/역직렬화에 실패했습니다."),
-    EXPIRED_INVITATION(401, 5002, "만료된 초대입니다."),
+    INVITE_EXPIRED(401, 5002, "만료된 초대입니다."),
+    INVITE_NOT_FOUND(HttpStatus.NOT_FOUND.value(), 5003, "초대 정보를 찾을 수 없습니다."),
 
     /*
      * Member 관련 오류
      */
     MEMBER_NOT_FOUND(404, 4001, "멤버가 존재하지 않습니다."),
     INVALID_INVITE_CODE(401, 4002, "잘못된 초대 코드입니다."),
-    ALREADY_CONNECTED(400, 4003, "이미 연결된 관계입니다"),
+    ALREADY_CONNECTED(400, 4003, "이미 연결된 부모-자식 관계입니다"),
     ALREADY_SEND_INVITE(400, 4004, "이미 초대를 보냈습니다"),
     INVALID_INVITE_MEMBER(400, 4005, "본인에게는 초대를 보낼 수 없습니다")
     ;

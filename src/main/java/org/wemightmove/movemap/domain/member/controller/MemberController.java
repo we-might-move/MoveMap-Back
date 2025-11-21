@@ -6,7 +6,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.wemightmove.movemap.domain.member.dto.request.AcceptInvitationRequest;
+import org.wemightmove.movemap.domain.member.dto.request.RejectInvitationRequest;
 import org.wemightmove.movemap.domain.member.dto.request.SendInvitedRequest;
+import org.wemightmove.movemap.domain.member.dto.response.AcceptInvitationResponse;
 import org.wemightmove.movemap.domain.member.dto.response.ReceivedInviteResponse;
 import org.wemightmove.movemap.domain.member.dto.response.SendInviteResponse;
 import org.wemightmove.movemap.domain.member.dto.response.SentInviteResponse;
@@ -54,4 +57,21 @@ public class MemberController {
             ) {
         return ResponseEntity.ok(memberCommandService.sendInvite(memberId, sendInvitedRequest.childUuid()));
     }
+
+    @Operation(summary = "초대 수락", description = "부모의 초대를 수락하여 관계를 맺습니다")
+    @PatchMapping("/invitations/accept")
+    public ResponseEntity<AcceptInvitationResponse> acceptInvite(@RequestParam("memberId") Long memberId,
+                                                                 @RequestBody AcceptInvitationRequest acceptInvitationRequest) {
+        return ResponseEntity.ok(memberCommandService.acceptInvite(memberId, acceptInvitationRequest));
+    }
+
+    @Operation(summary = "초대 거절", description = "부모의 초대를 거절합니다")
+    @PatchMapping("/invitations/reject")
+    public ResponseEntity<Void> rejectInvite(@RequestParam("memberId") Long memberId,
+                                               @RequestBody RejectInvitationRequest rejectInvitationRequest) {
+        memberCommandService.rejectInvte(memberId, rejectInvitationRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+
 }
