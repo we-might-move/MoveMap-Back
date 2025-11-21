@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.member.entity.Member;
+import org.wemightmove.movemap.global.exception.CustomException;
+import org.wemightmove.movemap.global.exception.ErrorCode;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -52,6 +54,9 @@ public class CheckInRecord {
     }
 
     public void checkout(LocalDateTime checkOutAt) {
+        if (checkOutAt.isBefore(this.checkInAt)) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
         this.checkOutAt = checkOutAt;
         this.durationMinutes = (int) Duration.between(checkInAt, checkOutAt).toMinutes();
     }
