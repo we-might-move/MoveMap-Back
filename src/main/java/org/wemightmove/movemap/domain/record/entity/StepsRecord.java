@@ -2,13 +2,11 @@ package org.wemightmove.movemap.domain.record.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.member.entity.Member;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -38,19 +36,4 @@ public class StepsRecord {
 
     @Column(name = "distance")
     private double distance;
-
-    @Column(name = "last_synced_at")
-    private LocalDateTime lastSyncedAt;
-
-    @Builder
-    public StepsRecord(Member member, LocalDate date) {
-        this.member = member;
-        this.date = date;
-    }
-
-    public void update(int count, double distance, LocalDateTime lastSyncedAt) {
-        this.count = count;
-        this.distance = distance;
-        this.lastSyncedAt = lastSyncedAt;
-    }
 }
