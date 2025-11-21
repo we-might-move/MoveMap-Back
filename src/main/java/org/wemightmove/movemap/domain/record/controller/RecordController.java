@@ -37,7 +37,7 @@ public class RecordController {
 
     @Operation(summary = "체크인", description = "사용자의 체크인 기록을 추가합니다.")
     @PostMapping("/checkin")
-    public ResponseEntity<Void> checkIn(@RequestBody CheckInRecordAddRequest request) {
+    public ResponseEntity<Void> checkIn(@RequestBody @Valid CheckInRecordAddRequest request) {
         recordService.checkIn(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -53,7 +53,7 @@ public class RecordController {
 /* <<<<<<<<<<  39190545-0e3a-4686-a078-9bb7017528e3  >>>>>>>>>>> */
     @Operation(summary = "체크아웃", description = "현재 체크인 상태인 기록을 체크아웃합니다.")
     @PatchMapping("/checkout")
-    public ResponseEntity<Void> checkOut(@RequestBody CheckInRecordModifyRequest request) {
+    public ResponseEntity<Void> checkOut(@RequestBody @Valid CheckInRecordModifyRequest request) {
         recordService.checkOut(request);
         return ResponseEntity.ok().build();
     }
