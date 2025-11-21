@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.member.entity.Member;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -48,5 +49,10 @@ public class CheckInRecord {
         this.facility = facility;
         this.date = checkInAt.toLocalDate();
         this.checkInAt = checkInAt;
+    }
+
+    public void checkout(LocalDateTime checkOutAt) {
+        this.checkOutAt = checkOutAt;
+        this.durationMinutes = (int) Duration.between(checkInAt, checkOutAt).toMinutes();
     }
 }
