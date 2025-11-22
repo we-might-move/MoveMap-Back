@@ -12,7 +12,8 @@ import org.wemightmove.movemap.global.enums.DeviceType;
 @Entity
 @Getter
 @Table(name = "notification", indexes = {
-        @Index(name = "idx_notification_member", columnList = "member_id")
+        @Index(name = "idx_notification_member", columnList = "member_id"),
+        @Index(name = "idx_notification_fcm_token", columnList = "fcm_token")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification extends BaseTimeEntity {
@@ -31,13 +32,11 @@ public class Notification extends BaseTimeEntity {
 
     @Column(name = "device_type", length = 20, nullable = false)
     @Enumerated(EnumType.STRING)
-    private DeviceType deviceType;
+    private DeviceType deviceType;  // ANDROID, IOS
 
-    // 기기 고유 ID - 같은 기기 중복 등록 방지
     @Column(name = "device_id", length = 100)
     private String deviceId;
 
-    // 푸시 알림 허용 여부
     @Column(name = "is_push_enabled", nullable = false)
     private boolean isPushEnabled = true;
 
@@ -47,6 +46,7 @@ public class Notification extends BaseTimeEntity {
         this.fcmToken = fcmToken;
         this.deviceType = deviceType;
         this.deviceId = deviceId;
+        this.isPushEnabled = true;
     }
 
     public void updateFcmToken(String fcmToken) {

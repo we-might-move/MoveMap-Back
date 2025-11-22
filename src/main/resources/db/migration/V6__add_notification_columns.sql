@@ -15,3 +15,4 @@ ALTER TABLE notification
     ADD CONSTRAINT FK_NOTIFICATION_ON_MEMBER FOREIGN KEY (member_id) REFERENCES member (id);
 
 CREATE INDEX idx_notification_member ON notification (member_id);
+CREATE INDEX idx_notification_fcm_token ON notification (fcm_token);
