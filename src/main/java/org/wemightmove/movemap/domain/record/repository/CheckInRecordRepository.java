@@ -9,6 +9,5 @@ import java.util.Optional;
 
 public interface CheckInRecordRepository extends JpaRepository<CheckInRecord, Long> {
 
-    Optional<CheckInRecord> findByMemberAndDateAndCheckOutAtIsNull(Member member, LocalDate date);
     Optional<CheckInRecord> findByMemberAndCheckOutAtIsNull(Member member);
 }
