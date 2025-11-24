@@ -1,6 +1,6 @@
 package org.wemightmove.movemap.domain.record.dto.response;
 
-public record CheckInResponse(
+public record CheckInRecordAddResponse(
         long id
 ) {
 }
