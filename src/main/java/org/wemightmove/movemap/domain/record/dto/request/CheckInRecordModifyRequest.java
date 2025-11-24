@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 
 public record CheckInRecordModifyRequest(
         @NotNull
+        long id,
+        @NotNull
         @PastOrPresent
         LocalDateTime checkOutAt
 ) {
