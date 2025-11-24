@@ -13,6 +13,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
+import org.wemightmove.movemap.domain.record.dto.response.CheckInResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
@@ -66,11 +67,11 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
-    public void checkIn(CheckInRecordAddRequest request) {
+    public CheckInResponse checkIn(CheckInRecordAddRequest request) {
         Member member = getCurrentMember();
 
         //이미 체크인 상태인지 검사 → 중복 체크인 방지
-        checkInRecordRepository.findByMemberAndDateAndCheckOutAtIsNull(member, request.checkInAt().toLocalDate())
+        checkInRecordRepository.findByMemberAndCheckOutAtIsNull(member)
                 .ifPresent(record -> {
                     throw new CustomException(ErrorCode.BAD_REQUEST);
                 });
@@ -84,7 +85,8 @@ public class RecordServiceImpl implements RecordService {
                 .checkInAt(request.checkInAt())
                 .build();
 
-        checkInRecordRepository.save(record);
+        record = checkInRecordRepository.save(record);
+        return new CheckInResponse(record.getId());
     }
 
     @Override
