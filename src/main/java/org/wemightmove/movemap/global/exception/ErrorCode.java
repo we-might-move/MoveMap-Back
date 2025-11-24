@@ -18,6 +18,8 @@ public enum ErrorCode {
     UNSUPPORTED_FILE_FORMAT(400, 1501, "지원하지 않는 파일 형식입니다."),
     FILE_UPLOAD_FAIL(500, 1502, "파일 업로드에 실패했습니다."),
     FILE_COMPARISON_FAIL(500, 1503, "파일 비교에 실패했습니다."),
+    ALREADY_PROCESSED(409, 1600, "이미 처리된 요청입니다."),
+    EXTERNAL_API_ERROR(500, 1900, "외부 API 호출 중 오류가 발생했습니다."),
 
     /*
      * 인증/인가 관련 오류
@@ -36,8 +38,9 @@ public enum ErrorCode {
      */
 
     MEMBER_NOT_FOUND(404, 3000, "사용자를 찾을 수 없습니다."),
-    MEMBER_DELETED(404, 3001, "탈퇴한 사용자입니다.")
+    MEMBER_DELETED(404, 3001, "탈퇴한 사용자입니다."),
 
+    RESOURCE_NOT_FOUND(404, 5000, "리소스를 찾을 수 없습니다.")
     ;
 
     private final int status;
