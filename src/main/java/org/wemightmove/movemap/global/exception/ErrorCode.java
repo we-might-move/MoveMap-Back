@@ -18,6 +18,7 @@ public enum ErrorCode {
     UNSUPPORTED_FILE_FORMAT(400, 1501, "지원하지 않는 파일 형식입니다."),
     FILE_UPLOAD_FAIL(500, 1502, "파일 업로드에 실패했습니다."),
     FILE_COMPARISON_FAIL(500, 1503, "파일 비교에 실패했습니다."),
+    ALREADY_PROCESSED(409, 1600, "이미 처리된 요청입니다."),
 
     /*
      * 인증/인가 관련 오류

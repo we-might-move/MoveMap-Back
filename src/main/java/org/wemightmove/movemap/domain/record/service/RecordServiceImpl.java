@@ -92,10 +92,16 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public void checkOut(CheckInRecordModifyRequest request) {
         Member member = getCurrentMember();
-        CheckInRecord record = checkInRecordRepository.findByMemberAndDateAndCheckOutAtIsNull(member, request.checkOutAt().toLocalDate())
+        CheckInRecord record = checkInRecordRepository.findById(request.id())
                 .orElseThrow(() -> {
                     throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
                 });
+        if(!record.getMember().equals(member)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+        if(record.getCheckOutAt() != null) {
+            throw new CustomException(ErrorCode.ALREADY_PROCESSED);
+        }
         record.checkout(request.checkOutAt());
         checkInRecordRepository.save(record);
     }
