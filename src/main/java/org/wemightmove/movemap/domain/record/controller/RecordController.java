@@ -11,6 +11,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
+import org.wemightmove.movemap.domain.record.dto.response.CheckInResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.service.RecordService;
 
@@ -38,9 +39,9 @@ public class RecordController {
 
     @Operation(summary = "체크인", description = "사용자의 체크인 기록을 추가합니다.")
     @PostMapping("/checkin")
-    public ResponseEntity<Void> checkIn(@RequestBody @Valid CheckInRecordAddRequest request) {
-        recordService.checkIn(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<CheckInResponse> checkIn(@RequestBody @Valid CheckInRecordAddRequest request) {
+        CheckInResponse response = recordService.checkIn(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 /* <<<<<<<<<<<<<<  ✨ Windsurf Command ⭐ >>>>>>>>>>>>>>>> */
