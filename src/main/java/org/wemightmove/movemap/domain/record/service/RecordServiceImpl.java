@@ -109,9 +109,8 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public CheckInStatusResponse findCheckInStatus() {
         Member member = getCurrentMember();
-        LocalDate today = LocalDate.now();
         boolean isCheckedIn = checkInRecordRepository
-                .findByMemberAndDateAndCheckOutAtIsNull(member, today)
+                .findByMemberAndCheckOutAtIsNull(member)
                 .isPresent();
         return new CheckInStatusResponse(isCheckedIn);
     }
