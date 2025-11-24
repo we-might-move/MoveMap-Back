@@ -15,6 +15,7 @@ import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
+import org.wemightmove.movemap.domain.record.dto.response.DailySelfRecordResponse;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
 import org.wemightmove.movemap.domain.record.entity.StepsRecord;
@@ -26,6 +27,7 @@ import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,6 +55,19 @@ public class RecordServiceImpl implements RecordService {
                 .build();
 
         selfRecordRepository.save(record);
+    }
+
+    @Override
+    public DailySelfRecordResponse findDailySelfRecord(LocalDate date) {
+        Member member = getCurrentMember();
+        List<SelfRecord> records = selfRecordRepository.findByMemberAndDate(member, date);
+        DailySelfRecordResponse response = DailySelfRecordResponse.builder()
+                .date(date)
+                .records(records.stream()
+                        .map(record -> new DailySelfRecordResponse.DailySelfRecordUnit(record.getExerciseType(), record.getExerciseType().getName(), record.getDurationMinutes()))
+                        .toList())
+                .build();
+        return response;
     }
 
     @Override
