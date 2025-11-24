@@ -15,6 +15,7 @@ import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.dto.response.DailySelfRecordResponse;
+import org.wemightmove.movemap.domain.record.dto.response.DailyStepsRecordResponse;
 import org.wemightmove.movemap.domain.record.service.RecordService;
 
 import java.time.LocalDate;
@@ -45,6 +46,12 @@ public class RecordController {
     public ResponseEntity<Void> stepsRecordSync(@RequestBody @Valid StepsRecordSyncRequest request) {
         recordService.syncStepsRecord(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @Operation(summary = "일별 걷기 기록 조회", description = "사용자의 일별 걷기 기록을 조회합니다.")
+    @GetMapping("/steps")
+    public ResponseEntity<DailyStepsRecordResponse> dailyStepsRecordList(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        return ResponseEntity.ok(recordService.findDailyStepsRecord(date));
     }
 
     @Operation(summary = "체크인", description = "사용자의 체크인 기록을 추가합니다.")

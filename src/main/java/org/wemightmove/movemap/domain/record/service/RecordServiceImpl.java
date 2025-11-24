@@ -16,6 +16,7 @@ import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.dto.response.DailySelfRecordResponse;
+import org.wemightmove.movemap.domain.record.dto.response.DailyStepsRecordResponse;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
 import org.wemightmove.movemap.domain.record.entity.StepsRecord;
@@ -58,6 +59,7 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public DailySelfRecordResponse findDailySelfRecord(LocalDate date) {
         Member member = getCurrentMember();
         List<SelfRecord> records = selfRecordRepository.findByMemberAndDate(member, date);
@@ -79,6 +81,20 @@ public class RecordServiceImpl implements RecordService {
                 .orElse(StepsRecord.builder().member(member).date(today).build());
         record.update(request.count(), request.distance(), request.syncedAt());
         stepsRecordRepository.save(record);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DailyStepsRecordResponse findDailyStepsRecord(LocalDate date) {
+        Member member = getCurrentMember();
+        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, date)
+                .orElse(StepsRecord.builder().member(member).date(date).build());
+        DailyStepsRecordResponse response = DailyStepsRecordResponse.builder()
+                .date(date)
+                .count(record.getCount())
+                .distance(record.getDistance())
+                .build();
+        return response;
     }
 
     @Override

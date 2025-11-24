@@ -7,6 +7,7 @@ import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.dto.response.DailySelfRecordResponse;
+import org.wemightmove.movemap.domain.record.dto.response.DailyStepsRecordResponse;
 
 import java.time.LocalDate;
 
@@ -14,6 +15,7 @@ public interface RecordService {
     void addSelfRecord(SelfRecordAddRequest request);
     DailySelfRecordResponse findDailySelfRecord(LocalDate date);
     void syncStepsRecord(StepsRecordSyncRequest request);
+    DailyStepsRecordResponse findDailyStepsRecord(LocalDate date);
     CheckInRecordAddResponse checkIn(CheckInRecordAddRequest request);
     void checkOut(CheckInRecordModifyRequest request);
     CheckInStatusResponse findCheckInStatus();
