@@ -2,12 +2,12 @@ package org.wemightmove.movemap.domain.record.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.global.enums.FacilityType;
 
-import java.time.Duration;
 import java.time.LocalDate;
 
 @Entity
@@ -32,6 +32,15 @@ public class SelfRecord {
     @Column(name = "exercise_type", length = 50, nullable = false)
     private FacilityType exerciseType;
 
-    @Column(name = "duration", columnDefinition = "interval", nullable = false)
-    private Duration duration;
+    @Column(name = "duration_minutes", nullable = false)
+    private int durationMinutes;
+
+    @Builder
+    public SelfRecord(Member member, LocalDate date, FacilityType exerciseType, int durationMinutes) {
+        this.member = member;
+        this.date = date;
+        this.exerciseType = exerciseType;
+        this.durationMinutes = durationMinutes;
+    }
+
 }
