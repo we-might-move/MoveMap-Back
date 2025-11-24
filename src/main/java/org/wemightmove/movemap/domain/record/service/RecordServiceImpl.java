@@ -13,7 +13,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInResponse;
+import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
 import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
@@ -67,7 +67,7 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
-    public CheckInResponse checkIn(CheckInRecordAddRequest request) {
+    public CheckInRecordAddResponse checkIn(CheckInRecordAddRequest request) {
         Member member = getCurrentMember();
 
         //이미 체크인 상태인지 검사 → 중복 체크인 방지
@@ -86,7 +86,7 @@ public class RecordServiceImpl implements RecordService {
                 .build();
 
         record = checkInRecordRepository.save(record);
-        return new CheckInResponse(record.getId());
+        return new CheckInRecordAddResponse(record.getId());
     }
 
     @Override
