@@ -1,0 +1,77 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'zulu'
+
+      - name: Make application.yml
+        if: contains(github.ref, 'deploy')
+        run: |
+          cd ./src/main/resources
+          touch ./application.yml
+          echo "${{secrets.APPLICATION_YML}}" > ./application.yml
+
+      - name: Gradle Caching
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build with Gradle
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build -x test
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker build & push
+        if: contains(github.ref, 'deploy')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_REPO }}:latest
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        id: deploy
+        if: contains(github.ref, 'deploy')
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: GITHUB_SHA
+          script: |
+            sudo mkdir -p /home/ubuntu/app
+            echo "DB_HOST=${{ secrets.DB_HOST }}" | sudo tee /home/ubuntu/app/.env
+            echo "DB_PORT=${{ secrets.DB_PORT }}" | sudo tee -a /home/ubuntu/app/.env
+            echo "DB_NAME=${{ secrets.DB_NAME }}" | sudo tee -a /home/ubuntu/app/.env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" | sudo tee -a /home/ubuntu/app/.env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" | sudo tee -a /home/ubuntu/app/.env
+            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" | sudo tee -a /home/ubuntu/app/.env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" | sudo tee -a /home/ubuntu/app/.env
+            cd /home/ubuntu/app
+            sudo docker-compose down
+            sudo docker pull ${{ secrets.DOCKER_REPO}}:latest
+            sudo docker-compose up -d

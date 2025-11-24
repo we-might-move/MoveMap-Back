@@ -132,7 +132,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
          */
         deleteInviteFromRedis(parentId, childId);
 
-        return new AcceptInvitationResponse(saved.getParent().getId(), saved.getParent().getNickname(), saved.getParent().getRole());
+        return new AcceptInvitationResponse(saved.getParent().getId(), saved.getParent().getNickname(), saved.getParent().getRole().name());
     }
 
     @Override

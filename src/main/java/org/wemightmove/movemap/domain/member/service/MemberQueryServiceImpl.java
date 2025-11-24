@@ -43,7 +43,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         List<InviteInfo> inviteInfoList = new ArrayList<>();
         // 부모와 연결된 자식 리스트 응답 생성
         List<MemberInfo> memberInfoList = new ArrayList<>(parentChildRepository.findAllByParent(parent).stream()
-                .map(m -> MemberInfo.of(m.getChild().getId(), m.getChild().getNickname(), m.getChild().getRole())).
+                .map(m -> MemberInfo.of(m.getChild().getId(), m.getChild().getNickname(), m.getChild().getRole().name())).
                 toList());
 
         if(childIdStrings == null || childIdStrings.isEmpty()) {
@@ -84,7 +84,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         Member child = getMember(childId);
 
         List<MemberInfo> parentList = parentChildRepository.findAllByChild(child).stream()
-                .map(m -> MemberInfo.of(m.getParent().getId(), m.getParent().getNickname(), m.getParent().getRole())).toList();
+                .map(m -> MemberInfo.of(m.getParent().getId(), m.getParent().getNickname(), m.getParent().getRole().name())).toList();
         List<InviteInfo> inviteInfoList = new ArrayList<>();
 
 

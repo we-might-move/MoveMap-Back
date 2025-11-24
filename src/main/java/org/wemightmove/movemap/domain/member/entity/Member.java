@@ -17,14 +17,18 @@ public class Member extends BaseTimeEntity {
     @Column(name = "id", updatable = false)
     private Long id;
 
-    @Column(name = "login_id", length = 20, nullable = false, unique = true)
-    private String loginId;
+    @Column(name = "kakao_id", unique = true)
+    private Long kakaoId;
+
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
 
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", length = 20, nullable = false)
-    private String role;
+    private Role role;
 
     @Column(name = "school", length = 100)
     private String school;
@@ -43,4 +47,8 @@ public class Member extends BaseTimeEntity {
 
     @Column(name = "weight")
     private double weight;
+
+    @Column(name = "isDeleted", nullable = false)
+    private boolean isDeleted = false;
+
 }
