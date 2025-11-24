@@ -44,15 +44,6 @@ public class RecordController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-/* <<<<<<<<<<<<<<  ✨ Windsurf Command ⭐ >>>>>>>>>>>>>>>> */
-/**
- * 체크인 상태를 업데이는 메서
- * @Operation(summary = "체크인 상태를 업데이", description = "")
- * @PatchMapping("/checkout")
- * public ResponseEntity<Void> checkOut(@RequestBody CheckInRecordModifyRequest request) {
- *   recordService.checkOut(request);
- *   return ResponseEntity.ok().build();
-/* <<<<<<<<<<  39190545-0e3a-4686-a078-9bb7017528e3  >>>>>>>>>>> */
     @Operation(summary = "체크아웃", description = "현재 체크인 상태인 기록을 체크아웃합니다.")
     @PatchMapping("/checkout")
     public ResponseEntity<Void> checkOut(@RequestBody @Valid CheckInRecordModifyRequest request) {
