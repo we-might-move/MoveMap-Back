@@ -35,9 +35,18 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### yml, test code ###
 src/main/resources/application-develop.yml
 src/main/resources/application-deploy.yml
+src/main/resources/application-redis.yml
+src/main/resources/application-loadtest.yml
+src/main/resources/application-firebase.yml
+src/main/resources/test_data/
+src/main/java/org/wemightmove/movemap/domain/stress_test/
+src/main/resources/heyoung-b2033-firebase-adminsdk-fbsvc-4dc5719dfb.json
 
 ### docker ###
 docker-compose.yml
 postgres-data
+Dockerfile
