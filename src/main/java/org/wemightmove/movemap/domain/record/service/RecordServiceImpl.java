@@ -13,10 +13,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
-import org.wemightmove.movemap.domain.record.dto.response.DailySelfRecordResponse;
-import org.wemightmove.movemap.domain.record.dto.response.DailyStepsRecordResponse;
+import org.wemightmove.movemap.domain.record.dto.response.*;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
 import org.wemightmove.movemap.domain.record.entity.StepsRecord;
@@ -138,12 +135,33 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CheckInStatusResponse findCheckInStatus() {
         Member member = getCurrentMember();
         boolean isCheckedIn = checkInRecordRepository
                 .findByMemberAndCheckOutAtIsNull(member)
                 .isPresent();
         return new CheckInStatusResponse(isCheckedIn);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DailyCheckInRecordResponse findDailyCheckInRecord(LocalDate date) {
+        Member member = getCurrentMember();
+        List<CheckInRecord> records = checkInRecordRepository.findDailyCheckInRecords(member, date);
+        DailyCheckInRecordResponse response = DailyCheckInRecordResponse.builder()
+                .date(date)
+                .records(records.stream()
+                        .map(record -> DailyCheckInRecordResponse.DailyCheckInRecordUnit.builder()
+                                .facilityId(record.getFacility().getId())
+                                .facilityName(record.getFacility().getName())
+                                .checkInAt(record.getCheckInAt())
+                                .checkOutAt(record.getCheckOutAt())
+                                .durationMinutes(record.getDurationMinutes())
+                                .build()
+                        ).toList())
+                .build();
+        return response;
     }
 
     private Member getCurrentMember() {

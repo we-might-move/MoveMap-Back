@@ -12,10 +12,7 @@ import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
-import org.wemightmove.movemap.domain.record.dto.response.DailySelfRecordResponse;
-import org.wemightmove.movemap.domain.record.dto.response.DailyStepsRecordResponse;
+import org.wemightmove.movemap.domain.record.dto.response.*;
 import org.wemightmove.movemap.domain.record.service.RecordService;
 
 import java.time.LocalDate;
@@ -72,6 +69,12 @@ public class RecordController {
     @GetMapping("/checkin/status")
     public ResponseEntity<CheckInStatusResponse> checkInStatus() {
         return ResponseEntity.ok(recordService.findCheckInStatus());
+    }
+
+    @Operation(summary = "일별 체크인 기록 조회", description = "사용자의 일별 체크인 기록을 조회합니다.")
+    @GetMapping("/checkin")
+    public ResponseEntity<DailyCheckInRecordResponse> checkInRecordAdd(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        return ResponseEntity.ok(recordService.findDailyCheckInRecord(date));
     }
 
 }
