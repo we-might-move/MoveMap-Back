@@ -27,7 +27,9 @@ import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -182,6 +184,42 @@ public class RecordServiceImpl implements RecordService {
                         ).toList())
                 .build();
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MonthDailyFlagsResponse findMonthDailyFlagsList(int year, int month) {
+        Member member = getCurrentMember();
+
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        List<MemberScore> scores =
+                memberScoreRepository.findByMemberAndDateBetween(member, startDate, endDate);
+
+        int daysInMonth = startDate.lengthOfMonth();
+        boolean[] flags = new boolean[daysInMonth + 1];
+
+        for (MemberScore s : scores) {
+            int day = s.getDate().getDayOfMonth();
+
+            boolean flag = s.getTotalSelfDuration() > 0
+                    || s.getTotalCheckinDuration() > 0
+                    || s.getTotalSteps() >= 10000;
+
+            flags[day] = flag;
+        }
+
+        Map<Integer, Boolean> flagMap = new HashMap<>();
+        for (int day = 1; day <= daysInMonth; day++) {
+            flagMap.put(day, flags[day]);
+        }
+
+        return MonthDailyFlagsResponse.builder()
+                .year(year)
+                .month(month)
+                .flags(flagMap)
+                .build();
     }
 
     private Member getCurrentMember() {

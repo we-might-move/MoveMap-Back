@@ -77,4 +77,10 @@ public class RecordController {
         return ResponseEntity.ok(recordService.findDailyCheckInRecord(date));
     }
 
+    @Operation(summary = "월별 운동 기록 조회", description = "사용자의 월별 운동 기록을 조회합니다.")
+    @GetMapping("/monthly")
+    public ResponseEntity<MonthDailyFlagsResponse> monthDailyFlagsList(@RequestParam int year, @RequestParam int month) {
+        MonthDailyFlagsResponse result = recordService.findMonthDailyFlagsList(year, month);
+        return ResponseEntity.ok(result);
+    }
 }

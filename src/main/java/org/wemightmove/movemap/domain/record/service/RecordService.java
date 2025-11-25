@@ -17,4 +17,5 @@ public interface RecordService {
     void checkOut(CheckInRecordModifyRequest request);
     CheckInStatusResponse findCheckInStatus();
     DailyCheckInRecordResponse findDailyCheckInRecord(LocalDate date);
+    MonthDailyFlagsResponse findMonthDailyFlagsList(int year, int month);
 }
