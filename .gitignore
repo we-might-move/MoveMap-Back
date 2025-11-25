@@ -5,6 +5,11 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### QueryDSL - 자동 생성 파일 ###
+**/generated/
+**/Q*.java
+src/main/generated/
+
 ### STS ###
 .apt_generated
 .classpath
