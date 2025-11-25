@@ -8,13 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
+import org.wemightmove.movemap.domain.member.entity.MemberScore;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.domain.member.repository.MemberScoreRepository;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.StepsRecordSyncRequest;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInRecordAddResponse;
-import org.wemightmove.movemap.domain.record.dto.response.CheckInStatusResponse;
+import org.wemightmove.movemap.domain.record.dto.response.*;
 import org.wemightmove.movemap.domain.record.entity.CheckInRecord;
 import org.wemightmove.movemap.domain.record.entity.SelfRecord;
 import org.wemightmove.movemap.domain.record.entity.StepsRecord;
@@ -26,6 +27,9 @@ import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -36,8 +40,10 @@ public class RecordServiceImpl implements RecordService {
     private final StepsRecordRepository stepsRecordRepository;
     private final CheckInRecordRepository checkInRecordRepository;
     private final FacilityRepository facilityRepository;
+    private final MemberScoreRepository memberScoreRepository;
 
     @Override
+    @Transactional
     public void addSelfRecord(SelfRecordAddRequest request) {
         Member member = getCurrentMember();
 
@@ -45,25 +51,63 @@ public class RecordServiceImpl implements RecordService {
             throw new CustomException(ErrorCode.BAD_REQUEST);
         }
 
+        int durationMinutes = request.hours() * 60 + request.minutes();
+
         SelfRecord record = SelfRecord.builder()
                 .member(member)
                 .date(LocalDate.now())
                 .exerciseType(request.exerciseType())
-                .durationMinutes(request.hours() * 60 + request.minutes())
+                .durationMinutes(durationMinutes)
                 .build();
 
         selfRecordRepository.save(record);
+
+        //점수 계산을 위한 필드 업데이트
+        MemberScore score = getOrCreateMemberScore(member, LocalDate.now());
+        score.addSelfDuration(durationMinutes);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DailySelfRecordResponse findDailySelfRecord(LocalDate date) {
+        Member member = getCurrentMember();
+        List<SelfRecord> records = selfRecordRepository.findByMemberAndDate(member, date);
+        DailySelfRecordResponse response = DailySelfRecordResponse.builder()
+                .date(date)
+                .records(records.stream()
+                        .map(record -> new DailySelfRecordResponse.DailySelfRecordUnit(record.getExerciseType(), record.getExerciseType().getName(), record.getDurationMinutes()))
+                        .toList())
+                .build();
+        return response;
     }
 
     @Override
     @Transactional
     public void syncStepsRecord(StepsRecordSyncRequest request) {
         Member member = getCurrentMember();
-        LocalDate today = request.syncedAt().toLocalDate();
-        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, today)
-                .orElse(StepsRecord.builder().member(member).date(today).build());
+        LocalDate date = request.syncedAt().toLocalDate();
+        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, date)
+                .orElse(StepsRecord.builder().member(member).date(date).build());
         record.update(request.count(), request.distance(), request.syncedAt());
         stepsRecordRepository.save(record);
+
+        //점수 계산을 위한 필드 업데이트
+        MemberScore score = getOrCreateMemberScore(member, date);
+        score.updateTotalSteps(request.count());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DailyStepsRecordResponse findDailyStepsRecord(LocalDate date) {
+        Member member = getCurrentMember();
+        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, date)
+                .orElse(StepsRecord.builder().member(member).date(date).build());
+        DailyStepsRecordResponse response = DailyStepsRecordResponse.builder()
+                .date(date)
+                .count(record.getCount())
+                .distance(record.getDistance())
+                .build();
+        return response;
     }
 
     @Override
@@ -90,23 +134,30 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
+    @Transactional
     public void checkOut(CheckInRecordModifyRequest request) {
         Member member = getCurrentMember();
         CheckInRecord record = checkInRecordRepository.findById(request.id())
                 .orElseThrow(() -> {
                     throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
                 });
-        if(!record.getMember().equals(member)) {
+        if (!record.getMember().equals(member)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
-        if(record.getCheckOutAt() != null) {
+        if (record.getCheckOutAt() != null) {
             throw new CustomException(ErrorCode.ALREADY_PROCESSED);
         }
         record.checkout(request.checkOutAt());
         checkInRecordRepository.save(record);
+
+        //점수 계산을 위한 필드 업데이트
+        MemberScore score = getOrCreateMemberScore(member, record.getDate());
+        score.addCheckInDuration(record.getDurationMinutes());
     }
 
+
     @Override
+    @Transactional(readOnly = true)
     public CheckInStatusResponse findCheckInStatus() {
         Member member = getCurrentMember();
         boolean isCheckedIn = checkInRecordRepository
@@ -115,9 +166,70 @@ public class RecordServiceImpl implements RecordService {
         return new CheckInStatusResponse(isCheckedIn);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public DailyCheckInRecordResponse findDailyCheckInRecord(LocalDate date) {
+        Member member = getCurrentMember();
+        List<CheckInRecord> records = checkInRecordRepository.findDailyCheckInRecords(member, date);
+        DailyCheckInRecordResponse response = DailyCheckInRecordResponse.builder()
+                .date(date)
+                .records(records.stream()
+                        .map(record -> DailyCheckInRecordResponse.DailyCheckInRecordUnit.builder()
+                                .facilityId(record.getFacility().getId())
+                                .facilityName(record.getFacility().getName())
+                                .checkInAt(record.getCheckInAt())
+                                .checkOutAt(record.getCheckOutAt())
+                                .durationMinutes(record.getDurationMinutes())
+                                .build()
+                        ).toList())
+                .build();
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MonthDailyFlagsResponse findMonthDailyFlagsList(int year, int month) {
+        Member member = getCurrentMember();
+
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+
+        List<MemberScore> scores =
+                memberScoreRepository.findByMemberAndDateBetween(member, startDate, endDate);
+
+        int daysInMonth = startDate.lengthOfMonth();
+        boolean[] flags = new boolean[daysInMonth + 1];
+
+        for (MemberScore s : scores) {
+            int day = s.getDate().getDayOfMonth();
+
+            boolean flag = s.getTotalSelfDuration() > 0
+                    || s.getTotalCheckinDuration() > 0
+                    || s.getTotalSteps() >= 10000;
+
+            flags[day] = flag;
+        }
+
+        Map<Integer, Boolean> flagMap = new HashMap<>();
+        for (int day = 1; day <= daysInMonth; day++) {
+            flagMap.put(day, flags[day]);
+        }
+
+        return MonthDailyFlagsResponse.builder()
+                .year(year)
+                .month(month)
+                .flags(flagMap)
+                .build();
+    }
+
     private Member getCurrentMember() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return memberRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private MemberScore getOrCreateMemberScore(Member member, LocalDate date) {
+        return memberScoreRepository.findByMemberAndDate(member, date)
+                .orElseGet(() -> memberScoreRepository.save(new MemberScore(member, date)));
     }
 }
