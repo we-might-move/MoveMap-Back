@@ -36,33 +36,34 @@ public enum ErrorCode {
     EXPIRED_REFRESH_TOKEN(401, 2301, "만료된 리프레쉬 토큰입니다."),
 
     /*
-     * 리소스 관련 오류 (Member)
+     * 리소스 관련 오류 (Member, Notification)
      * (3000 ~ 3999)
      */
 
     MEMBER_NOT_FOUND(404, 3000, "사용자를 찾을 수 없습니다."),
     MEMBER_DELETED(404, 3001, "탈퇴한 사용자입니다."),
-    INVALID_INVITE_CODE(401, 3002, "잘못된 초대 코드입니다."),
-    ALREADY_CONNECTED(400, 3003, "이미 연결된 부모-자식 관계입니다"),
-    ALREADY_SEND_INVITE(400, 3004, "이미 초대를 보냈습니다"),
-    INVALID_INVITE_MEMBER(400, 3005, "본인에게는 초대를 보낼 수 없습니다"),
-
-    /*
-     * FCM 관련 오류 (Notification)
-     * (4000 ~ 4999)
-     */
-    INVALID_FCM_TOKEN(401, 4000, "유효하지 않은 FCM 토큰입니다. 재등록해주세요."),
-    DEVICE_NOT_FOUND(404, 4001, "기기를 찾을 수 없습니다. 등록 후 사용해주세요."),
+    INVALID_FCM_TOKEN(401, 3002, "유효하지 않은 FCM 토큰입니다. 재등록해주세요."),
+    DEVICE_NOT_FOUND(404, 3003, "기기를 찾을 수 없습니다. 등록 후 사용해주세요."),
+    INVALID_INVITE_CODE(401, 3004, "잘못된 초대 코드입니다."),
+    ALREADY_CONNECTED(400, 3005, "이미 연결된 부모-자식 관계입니다"),
+    ALREADY_SEND_INVITE(400, 3006, "이미 초대를 보냈습니다"),
+    INVALID_INVITE_MEMBER(400, 3007, "본인에게는 초대를 보낼 수 없습니다"),
 
     /*
      * Redis 관련 오류
-     * (5000 ~ 5999)
+     * (4000 ~ 4999)
      */
     RESOURCE_NOT_FOUND(404, 5000, "리소스를 찾을 수 없습니다."),
     FAIL_SERIALIZATION(500, 5001, "직렬화/역직렬화에 실패했습니다."),
     INVITE_EXPIRED(401, 5002, "만료된 초대입니다."),
-    INVITE_NOT_FOUND(HttpStatus.NOT_FOUND.value(), 5003, "초대 정보를 찾을 수 없습니다.");
+    INVITE_NOT_FOUND(HttpStatus.NOT_FOUND.value(), 5003, "초대 정보를 찾을 수 없습니다."),
 
+    /*
+     * 위도, 경도 오류
+     * (6000 ~ 6999)
+     */
+    WRONG_LATITUDE(400, 6001, "위도는 -90에서 90 사이여야 합니다."),
+    WRONG_LONGITUDE(400, 6002, "경도는 -180에서 180 사이여야 합니다.");
 
     private final int status;
     private final int code;

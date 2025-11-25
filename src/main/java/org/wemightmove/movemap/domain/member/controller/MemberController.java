@@ -9,12 +9,12 @@ import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.member.dto.request.AcceptInvitationRequest;
 import org.wemightmove.movemap.domain.member.dto.request.RejectInvitationRequest;
 import org.wemightmove.movemap.domain.member.dto.request.SendInvitedRequest;
-import org.wemightmove.movemap.domain.member.dto.response.AcceptInvitationResponse;
-import org.wemightmove.movemap.domain.member.dto.response.ReceivedInviteResponse;
-import org.wemightmove.movemap.domain.member.dto.response.SendInviteResponse;
-import org.wemightmove.movemap.domain.member.dto.response.SentInviteResponse;
+import org.wemightmove.movemap.domain.member.dto.response.*;
 import org.wemightmove.movemap.domain.member.service.MemberCommandService;
+import org.wemightmove.movemap.domain.member.service.MemberFacilityQueryService;
 import org.wemightmove.movemap.domain.member.service.MemberQueryService;
+
+import java.math.BigDecimal;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,6 +24,7 @@ public class MemberController {
 
     private final MemberQueryService memberQueryService;
     private final MemberCommandService memberCommandService;
+    private final MemberFacilityQueryService memberFacilityQueryService;
 
     /**
      * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
@@ -71,6 +72,21 @@ public class MemberController {
                                                @RequestBody RejectInvitationRequest rejectInvitationRequest) {
         memberCommandService.rejectInvte(memberId, rejectInvitationRequest);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "찜한 시설 리스트 조회", description = "찜한 시설 리스트를 조회합니다")
+    @GetMapping("/bookmarks/facilities")
+    public ResponseEntity<FavoriteFacilityPageResponse> getFavoriteFacilityList(
+            @RequestParam("memberId") Long memberId,
+            @RequestParam("latitude") BigDecimal latitude,
+            @RequestParam("longitude") BigDecimal longitude,
+            @RequestParam(name = "cursor", required = false) Long cursor,
+            @RequestParam(name = "size", required = false, defaultValue = "20") Integer size) {
+
+
+        FavoriteFacilityPageResponse response = memberFacilityQueryService.getFavoriteList(memberId, latitude, longitude, cursor, size);
+
+        return ResponseEntity.ok(response);
     }
 
 
