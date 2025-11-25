@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
+import org.wemightmove.movemap.domain.member.entity.MemberScore;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.domain.member.repository.MemberScoreRepository;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
@@ -36,8 +38,10 @@ public class RecordServiceImpl implements RecordService {
     private final StepsRecordRepository stepsRecordRepository;
     private final CheckInRecordRepository checkInRecordRepository;
     private final FacilityRepository facilityRepository;
+    private final MemberScoreRepository memberScoreRepository;
 
     @Override
+    @Transactional
     public void addSelfRecord(SelfRecordAddRequest request) {
         Member member = getCurrentMember();
 
@@ -45,14 +49,20 @@ public class RecordServiceImpl implements RecordService {
             throw new CustomException(ErrorCode.BAD_REQUEST);
         }
 
+        int durationMinutes = request.hours() * 60 + request.minutes();
+
         SelfRecord record = SelfRecord.builder()
                 .member(member)
                 .date(LocalDate.now())
                 .exerciseType(request.exerciseType())
-                .durationMinutes(request.hours() * 60 + request.minutes())
+                .durationMinutes(durationMinutes)
                 .build();
 
         selfRecordRepository.save(record);
+
+        //점수 계산을 위한 필드 업데이트
+        MemberScore score = getOrCreateMemberScore(member, LocalDate.now());
+        score.addSelfDuration(durationMinutes);
     }
 
     @Override
@@ -73,11 +83,15 @@ public class RecordServiceImpl implements RecordService {
     @Transactional
     public void syncStepsRecord(StepsRecordSyncRequest request) {
         Member member = getCurrentMember();
-        LocalDate today = request.syncedAt().toLocalDate();
-        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, today)
-                .orElse(StepsRecord.builder().member(member).date(today).build());
+        LocalDate date = request.syncedAt().toLocalDate();
+        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, date)
+                .orElse(StepsRecord.builder().member(member).date(date).build());
         record.update(request.count(), request.distance(), request.syncedAt());
         stepsRecordRepository.save(record);
+
+        //점수 계산을 위한 필드 업데이트
+        MemberScore score = getOrCreateMemberScore(member, date);
+        score.updateTotalSteps(request.count());
     }
 
     @Override
@@ -118,21 +132,27 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
+    @Transactional
     public void checkOut(CheckInRecordModifyRequest request) {
         Member member = getCurrentMember();
         CheckInRecord record = checkInRecordRepository.findById(request.id())
                 .orElseThrow(() -> {
                     throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND);
                 });
-        if(!record.getMember().equals(member)) {
+        if (!record.getMember().equals(member)) {
             throw new CustomException(ErrorCode.ACCESS_DENIED);
         }
-        if(record.getCheckOutAt() != null) {
+        if (record.getCheckOutAt() != null) {
             throw new CustomException(ErrorCode.ALREADY_PROCESSED);
         }
         record.checkout(request.checkOutAt());
         checkInRecordRepository.save(record);
+
+        //점수 계산을 위한 필드 업데이트
+        MemberScore score = getOrCreateMemberScore(member, record.getDate());
+        score.addCheckInDuration(record.getDurationMinutes());
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -168,5 +188,10 @@ public class RecordServiceImpl implements RecordService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return memberRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private MemberScore getOrCreateMemberScore(Member member, LocalDate date) {
+        return memberScoreRepository.findByMemberAndDate(member, date)
+                .orElseGet(() -> memberScoreRepository.save(new MemberScore(member, date)));
     }
 }
