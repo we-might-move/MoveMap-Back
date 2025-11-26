@@ -44,7 +44,7 @@ jobs:
       - name: Build with Gradle
         run: |
           chmod +x ./gradlew
-          ./gradlew build -x test
+          ./gradlew clean build -x test --no-build-cache
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
