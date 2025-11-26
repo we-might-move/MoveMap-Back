@@ -16,6 +16,14 @@ jobs:
           java-version: 17
           distribution: 'zulu'
 
+      - name: create-json
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.3
+        with:
+          name: "firebase-service-account.json"
+          json: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+          dir: "src/main/resources/"
+
       - name: Make application.yml
         if: contains(github.ref, 'deploy')
         run: |
