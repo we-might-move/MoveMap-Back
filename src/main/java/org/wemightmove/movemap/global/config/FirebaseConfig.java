@@ -21,23 +21,32 @@ public class FirebaseConfig {
 
     // Firebase 초기화 : 서버 시작 시 한 번만 실행됨
     @PostConstruct
-    public void init() {
-        try {
-            if(!FirebaseApp.getApps().isEmpty()) {
-                log.info("Firebase 이미 초기화됨");
-                return;
-            }
-
-            InputStream serviceAccount  = new ClassPathResource(firebaseConfigPath).getInputStream();
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount)).build();
-
-            FirebaseApp.initializeApp(options);
-            log.info("Firebase 초기화 완료");
-
-        } catch (IOException e) {
-            log.error("Firebase 초기화 실패");
-            throw new RuntimeException("Firebase 초기화 실패", e);
+public void init() {
+    try {
+        if (!FirebaseApp.getApps().isEmpty()) {
+            log.info("Firebase 이미 초기화됨");
+            return;
         }
+
+        log.info("Firebase config path = {}", firebaseConfigPath);
+
+        File file = new File(firebaseConfigPath);
+        log.info("File exists = {}", file.exists());
+        log.info("File canRead = {}", file.canRead());
+        log.info("Absolute path = {}", file.getAbsolutePath());
+
+        InputStream serviceAccount = new FileInputStream(file);
+
+        FirebaseOptions options = FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .build();
+
+        FirebaseApp.initializeApp(options);
+        log.info("Firebase 초기화 완료");
+
+    } catch (Exception e) {
+        log.error("Firebase 초기화 실패", e);
+        throw new RuntimeException("Firebase 초기화 실패", e);
     }
+}
 }
