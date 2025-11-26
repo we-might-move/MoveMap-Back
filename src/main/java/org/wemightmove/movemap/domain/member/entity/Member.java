@@ -51,4 +51,7 @@ public class Member extends BaseTimeEntity {
     @Column(name = "isDeleted", nullable = false)
     private boolean isDeleted = false;
 
+    public void withdraw() {
+        this.isDeleted = true;
+    }
 }

@@ -1,6 +1,9 @@
 package org.wemightmove.movemap.domain.member.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.entity.ParentChild;
 
@@ -11,4 +14,8 @@ public interface ParentChildRepository extends JpaRepository<ParentChild, Long> 
     List<ParentChild> findAllByChild(Member child);
 
     boolean existsByParentAndChild(Member parent, Member child);
+
+    @Modifying
+    @Query("DELETE FROM ParentChild pc WHERE pc.parent.id = :memberId OR pc.child.id = :memberId")
+    int deleteAllByMemberId(@Param("memberId") Long memberId);
 }

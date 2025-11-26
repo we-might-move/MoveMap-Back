@@ -107,5 +107,12 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
+    @DeleteMapping("/members")
+    public ResponseEntity<MemberWithdrawResponse> withdrawMember(@RequestParam("memberId") Long memberId) {
+        return ResponseEntity.ok(
+                memberCommandService.withdrawMember(memberId)
+        );
+    }
 
 }

@@ -11,15 +11,20 @@ import org.wemightmove.movemap.domain.member.dto.request.AcceptInvitationRequest
 import org.wemightmove.movemap.domain.member.dto.request.RejectInvitationRequest;
 import org.wemightmove.movemap.domain.member.dto.response.AcceptInvitationResponse;
 import org.wemightmove.movemap.domain.member.dto.response.InviteInfo;
+import org.wemightmove.movemap.domain.member.dto.response.MemberWithdrawResponse;
 import org.wemightmove.movemap.domain.member.dto.response.SendInviteResponse;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.entity.ParentChild;
+import org.wemightmove.movemap.domain.member.repository.MemberFacilityRepository;
+import org.wemightmove.movemap.domain.member.repository.MemberProgramRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
+import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -37,6 +42,9 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     private static final String INVITE_PREFIX = "invite:";
     private static final String SENT_LIST_PREFIX = "invites:sent:";
     private static final String RECEIVED_LIST_PREFIX = "invites:received:";
+    private final MemberFacilityRepository memberFacilityRepository;
+    private final MemberProgramRepository memberProgramRepository;
+    private final NotificationRepository notificationRepository;
 
     @Value("${invite.expiration-days:3}")
     private long inviteExpirationDays;
@@ -152,6 +160,46 @@ public class MemberCommandServiceImpl implements MemberCommandService {
          */
         // Redis 에서 관련 초대 정보 모두 삭제
         deleteInviteFromRedis(parentId, childId);
+    }
+
+    @Override
+    @Transactional
+    public MemberWithdrawResponse withdrawMember(Long memberId) {
+        // 1. 회원 조회 및 검증
+        Member member = memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        if(member.isDeleted()) {
+            throw new CustomException(ErrorCode.MEMBER_DELETED);
+        }
+
+        // 2. 삭제 전 통계 수집
+        List<ParentChild> asParentRelations = parentChildRepository.findAllByParent(member);
+        List<ParentChild> asChildRelations = parentChildRepository.findAllByChild(member);
+
+        int parentRelationCount = asParentRelations.size();
+        int childRelationsCount = asChildRelations.size();
+
+        // 3. 개인 데이터 삭제(ParentChild, MemberFacility, MemberProgram, Notification)
+        int deletedRelations = parentChildRepository.deleteAllByMemberId(memberId);
+        int deletedFacilities = memberFacilityRepository.deleteAllByMemberId(memberId);
+        int deletedPrograms = memberProgramRepository.deleteAllByMemberId(memberId);
+        int deletedNotifications = notificationRepository.deleteAllByMemberId(memberId);
+
+        // 회원 소프트 삭제
+        member.withdraw();
+
+        return new MemberWithdrawResponse(
+                "회원 탈퇴가 완료되었습니다.",
+                LocalDateTime.now(),
+                new MemberWithdrawResponse.WithdrawStatistics(
+                        parentRelationCount,
+                        childRelationsCount,
+                        deletedFacilities,
+                        deletedPrograms,
+                        deletedNotifications,
+                        parentRelationCount + childRelationsCount
+                )
+        );
     }
 
     private String buildInviteKey(Long parentId, Long childId) {
