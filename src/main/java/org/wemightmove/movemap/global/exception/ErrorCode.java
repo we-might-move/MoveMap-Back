@@ -49,6 +49,16 @@ public enum ErrorCode {
     ALREADY_SEND_INVITE(400, 3006, "이미 초대를 보냈습니다"),
     INVALID_INVITE_MEMBER(400, 3007, "본인에게는 초대를 보낼 수 없습니다"),
 
+    DUPLICATE_NICKNAME(400, 3008, "유효하지 않은 닉네임입니다"),
+    INVALID_REGION_CITY(400, 3009, "유효하지 않은 지역(시/도)입니다"),
+    INVALID_REGION_DISTRICT(400, 3009, "유효하지 않은 지역(시/군/구)입니다"),
+    INVALID_REGION_UPDATE(400, 3010, "지역 정보를 변경하려면 시/도와 구/군을 모두 입력해야 합니다"),
+    INVALID_REGION_FAIR(400, 3011, "부모 지역(시/도)과 포함 지역(시/군/구)의 짝이 알맞지 않습니다."),
+    INVALID_SEX(400, 3012, "유효하지 않은 성별입니다"),
+    INVALID_AGE(400, 3013, "유효하지 않은 나이입니다"),
+    INVALID_HEIGHT(400, 3014, "유효하지 않은 키 값입니다"),
+    INVALID_WEIGHT(400, 3015, "유효하지 않은 몸무게 값입니다"),
+
     /*
      * Redis 관련 오류
      * (4000 ~ 4999)

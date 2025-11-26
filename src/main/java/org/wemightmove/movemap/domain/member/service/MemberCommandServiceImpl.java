@@ -9,10 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.member.dto.request.AcceptInvitationRequest;
 import org.wemightmove.movemap.domain.member.dto.request.RejectInvitationRequest;
-import org.wemightmove.movemap.domain.member.dto.response.AcceptInvitationResponse;
-import org.wemightmove.movemap.domain.member.dto.response.InviteInfo;
-import org.wemightmove.movemap.domain.member.dto.response.MemberWithdrawResponse;
-import org.wemightmove.movemap.domain.member.dto.response.SendInviteResponse;
+import org.wemightmove.movemap.domain.member.dto.request.UpdateMemberRequest;
+import org.wemightmove.movemap.domain.member.dto.response.*;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.entity.ParentChild;
 import org.wemightmove.movemap.domain.member.repository.MemberFacilityRepository;
@@ -20,8 +18,10 @@ import org.wemightmove.movemap.domain.member.repository.MemberProgramRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
+import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
+import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +45,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     private final MemberFacilityRepository memberFacilityRepository;
     private final MemberProgramRepository memberProgramRepository;
     private final NotificationRepository notificationRepository;
+    private final RegionTypeRepository regionTypeRepository;
 
     @Value("${invite.expiration-days:3}")
     private long inviteExpirationDays;
@@ -202,6 +203,62 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         );
     }
 
+    @Override
+    @Transactional
+    public MemberInfoResponse updateMember(Long memberId, UpdateMemberRequest updateMemberRequest) {
+        // 1. 수정할 필드가 있는지 검증
+        if(!updateMemberRequest.hasAnyFieldToUpdate()) {
+            throw new CustomException(ErrorCode.MISSING_PARAMETER);
+        }
+
+        // 2. 회원 조회
+        Member member = memberRepository.findActiveById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 3. 닉네임 중복 체크 (닉네임 변경 시)
+        if (updateMemberRequest.nickname() != null && !updateMemberRequest.nickname().equals(member.getNickname())) {
+            validateNicknameDuplication(updateMemberRequest.nickname(), memberId);
+        }
+
+        // 2. 지역 정보 원자성 검증
+        if (!updateMemberRequest.isValidRegionUpdate()) {
+            throw new CustomException(ErrorCode.INVALID_REGION_UPDATE);
+        }
+
+        String regionCode = null;
+        String city = getCity(member.getRegionCode().substring(0, 2));
+        String district = getDistrict(member.getRegionCode().substring(0, 4));
+
+        // 4. 지역 코드로 변경
+        if (updateMemberRequest.city() != null && updateMemberRequest.district() != null) {
+            RegionType regionType = regionTypeRepository.findRegionByNameAndParentName(updateMemberRequest.city(), updateMemberRequest.district())
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR));
+
+            regionCode = regionType.getPrefix();
+
+            city = getCity(regionCode.substring(0, 2));
+            district = getDistrict(regionCode.substring(0, 4));
+        }
+
+        // 5. 회원 정보 수정
+        member.updateProfile(
+                updateMemberRequest.nickname(),
+                updateMemberRequest.school(),
+                regionCode,
+                updateMemberRequest.sex(),
+                updateMemberRequest.age(),
+                updateMemberRequest.height(),
+                updateMemberRequest.weight()
+        );
+
+        return MemberInfoResponse.from(member, city, district);
+    }
+
+    private void validateNicknameDuplication(String nickname, Long excludeMemberId) {
+        if (memberRepository.existsByNicknameExcludingMember(nickname, excludeMemberId)) {
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+    }
+
     private String buildInviteKey(Long parentId, Long childId) {
         return INVITE_PREFIX + parentId + ":" + childId;
     }
@@ -219,5 +276,13 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         // 자식의 받은 목록에서 제거
         String receivedListKey = SENT_LIST_PREFIX + childId;
         redisTemplate.opsForSet().remove(receivedListKey, parentId.toString());
+    }
+
+    private String getCity(String cityCode) {
+        return regionTypeRepository.findParentRegionTypeByPrefix(cityCode).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getName();
+    }
+
+    private String getDistrict(String districtCode) {
+        return regionTypeRepository.findChildRegionTypeByPrefix(districtCode).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getName();
     }
 }

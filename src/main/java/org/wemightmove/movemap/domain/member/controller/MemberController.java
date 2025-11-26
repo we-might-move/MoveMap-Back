@@ -7,10 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.wemightmove.movemap.domain.member.dto.request.AcceptInvitationRequest;
-import org.wemightmove.movemap.domain.member.dto.request.FavoriteProgramRequest;
-import org.wemightmove.movemap.domain.member.dto.request.RejectInvitationRequest;
-import org.wemightmove.movemap.domain.member.dto.request.SendInvitedRequest;
+import org.wemightmove.movemap.domain.member.dto.request.*;
 import org.wemightmove.movemap.domain.member.dto.response.*;
 import org.wemightmove.movemap.domain.member.service.MemberCommandService;
 import org.wemightmove.movemap.domain.member.service.MemberFacilityQueryService;
@@ -108,11 +105,21 @@ public class MemberController {
     }
 
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
-    @DeleteMapping("/members")
+    @DeleteMapping
     public ResponseEntity<MemberWithdrawResponse> withdrawMember(@RequestParam("memberId") Long memberId) {
         return ResponseEntity.ok(
                 memberCommandService.withdrawMember(memberId)
         );
     }
+
+    @Operation(summary = "회원 정보 수정", description = "회원 정보 수정을 진행합니다.")
+    @PatchMapping
+    public ResponseEntity<MemberInfoResponse> withdrawMember(@RequestParam("memberId") Long memberId, @ModelAttribute UpdateMemberRequest updateMemberRequest) {
+        return ResponseEntity.ok(
+                memberCommandService.updateMember(memberId, updateMemberRequest)
+        );
+    }
+
+
 
 }
