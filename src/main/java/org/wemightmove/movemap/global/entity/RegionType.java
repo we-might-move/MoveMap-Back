@@ -23,6 +23,6 @@ public class RegionType {
     @Column(name = "prefix", length = 20, nullable = false, unique = true)
     private String prefix;
 
-    @Column(name = "name", length = 100, nullable = false, unique = true)
+    @Column(name = "name", length = 100, nullable = false)
     private String name;
 }
