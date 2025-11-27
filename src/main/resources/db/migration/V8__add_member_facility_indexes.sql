@@ -1,6 +1,6 @@
 -- 1. 무한 스크롤 최적화를 위한 복합 인덱스
 -- 사용 쿼리: WHERE member_id = ? AND id < ? ORDER BY id DESC
--- 성능: 전체 테이블 스캔 → 인덱스 직접 접근 (100배 빠름)
+-- 성능: 전체 테이블 스캔 : 인덱스 직접 접근 (100배 빠름)
 CREATE INDEX IF NOT EXISTS idx_member_facility_member_id_id_desc
     ON member_facility(member_id, id DESC);
 
