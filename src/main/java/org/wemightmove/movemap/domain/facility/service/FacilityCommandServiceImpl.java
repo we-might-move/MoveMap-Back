@@ -27,10 +27,23 @@ public class FacilityCommandServiceImpl implements FacilityCommandService {
         Facility facility = getFacility(facilityId);
 
         if (memberFacilityRepository.existsMemberFacilitiesByMemberAndFacility(member, facility)) {
-            throw new CustomException(ErrorCode.ALREADY_BOOKMARK_FACILITY);
+            throw new CustomException(ErrorCode.ALREADY_ADDED_BOOKMARK);
         }
 
         memberFacilityRepository.save(MemberFacility.from(member, facility));
+    }
+
+    @Override
+    @Transactional
+    public void deleteBookmarkFacility(Long memberId, Long facilityId) {
+        Member member = getMember(memberId);
+        Facility facility = getFacility(facilityId);
+
+        if(!memberFacilityRepository.existsMemberFacilitiesByMemberAndFacility(member, facility)) {
+            throw new CustomException(ErrorCode.ALREADY_DELETED_BOOKMARK);
+        }
+
+        memberFacilityRepository.deleteByMemberAndFacility(member, facility);
     }
 
     private Member getMember(Long memberId) {

@@ -60,7 +60,8 @@ public enum ErrorCode {
     INVALID_WEIGHT(400, 3016, "유효하지 않은 몸무게 값입니다"),
 
     FACILITY_NOT_FOUND(404, 3017, "시설을 찾을 수 없습니다."),
-    ALREADY_BOOKMARK_FACILITY(400, 3018, "이미 북마크한 시설입니다"),
+    ALREADY_ADDED_BOOKMARK(400, 3018, "이미 등록한 북마크입니다."),
+    ALREADY_DELETED_BOOKMARK(400, 3018, "이미 삭제한 북마크입니다"),
 
     /*
      * Redis 관련 오류

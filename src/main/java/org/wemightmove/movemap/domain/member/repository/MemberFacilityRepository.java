@@ -15,4 +15,6 @@ public interface MemberFacilityRepository extends JpaRepository<MemberFacility, 
     int deleteAllByMemberId(@Param("memberId") Long memberId);
 
     boolean existsMemberFacilitiesByMemberAndFacility(Member member, Facility facility);
+
+    void deleteByMemberAndFacility(Member member, Facility facility);
 }
