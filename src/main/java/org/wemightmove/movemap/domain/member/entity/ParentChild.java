@@ -2,6 +2,7 @@ package org.wemightmove.movemap.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,4 +24,10 @@ public class ParentChild {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "child_id", nullable = false)
     private Member child;
+
+    @Builder
+    public ParentChild(Member parent, Member child) {
+        this.parent = parent;
+        this.child = child;
+    }
 }
