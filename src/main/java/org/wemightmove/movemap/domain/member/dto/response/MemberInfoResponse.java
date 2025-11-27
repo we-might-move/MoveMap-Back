@@ -1,12 +1,12 @@
 package org.wemightmove.movemap.domain.member.dto.response;
 
 import org.wemightmove.movemap.domain.member.entity.Member;
-import org.wemightmove.movemap.domain.member.entity.Role;
+import org.wemightmove.movemap.global.enums.RoleType;
 import org.wemightmove.movemap.global.enums.SexType;
 
 public record MemberInfoResponse(
         String email,
-        Role role,
+        RoleType role,
         String nickname,
         String school,
         String city,

@@ -21,7 +21,6 @@ import org.wemightmove.movemap.domain.notification.dto.response.PushMessageRespo
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
 import org.wemightmove.movemap.domain.notification.service.FcmPushService;
 import org.wemightmove.movemap.global.entity.RegionType;
-import org.wemightmove.movemap.global.enums.NotificationType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;

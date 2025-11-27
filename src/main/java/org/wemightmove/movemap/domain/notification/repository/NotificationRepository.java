@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.notification.entity.Notification;
 
 import java.util.List;

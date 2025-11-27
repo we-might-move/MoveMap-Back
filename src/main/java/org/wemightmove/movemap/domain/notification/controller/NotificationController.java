@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.notification.dto.request.DeviceRegisterRequest;
 import org.wemightmove.movemap.domain.notification.service.NotificationService;
-import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 /**
  * FIXME : Auth 완성되면 memberId 부분 수정

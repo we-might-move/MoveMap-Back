@@ -1,6 +1,5 @@
 package org.wemightmove.movemap.domain.member.service;
 
-import org.wemightmove.movemap.domain.member.dto.request.FavoriteProgramRequest;
 import org.wemightmove.movemap.domain.member.dto.response.FavoriteProgramListResponse;
 
 import java.math.BigDecimal;

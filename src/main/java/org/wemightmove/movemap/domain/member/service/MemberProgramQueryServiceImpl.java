@@ -3,7 +3,6 @@ package org.wemightmove.movemap.domain.member.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.wemightmove.movemap.domain.member.dto.request.FavoriteProgramRequest;
 import org.wemightmove.movemap.domain.member.dto.response.FavoriteProgramListResponse;
 import org.wemightmove.movemap.domain.member.dto.response.FavoriteProgramResponse;
 import org.wemightmove.movemap.domain.member.repository.MemberProgramRepository;

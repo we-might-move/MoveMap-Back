@@ -5,8 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.global.entity.BaseTimeEntity;
+import org.wemightmove.movemap.global.enums.RoleType;
 import org.wemightmove.movemap.global.enums.SexType;
-import org.wemightmove.movemap.global.exception.CustomException;
 
 @Entity
 @Getter
@@ -30,7 +30,7 @@ public class Member extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", length = 20, nullable = false)
-    private Role role;
+    private RoleType role;
 
     @Column(name = "school", length = 100)
     private String school;

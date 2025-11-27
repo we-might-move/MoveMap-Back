@@ -7,8 +7,6 @@ import org.wemightmove.movemap.domain.member.entity.Member;
 
 import java.util.Optional;
 
-import java.util.List;
-
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email);
     Optional<Member> findByKakaoId(Long kakaoId);
