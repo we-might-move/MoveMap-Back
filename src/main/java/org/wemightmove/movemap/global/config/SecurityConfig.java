@@ -17,7 +17,6 @@ import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.wemightmove.movemap.global.jwt.JwtAuthenticationFilter;
 import org.wemightmove.movemap.global.jwt.JwtTokenProvider;
 import org.wemightmove.movemap.global.security.CustomLogoutHandler;
@@ -36,7 +35,7 @@ public class SecurityConfig {
     private static final String[] AUTH_WHITELIST = {
             "/error", "/favicon.ico", "/health",
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**",
-            "/auth/login", "/auth/kakao", "/auth/token", "/**"
+            "/auth/login", "/auth/kakao", "/auth/token"
     };
 
 
@@ -70,7 +69,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(AUTH_WHITELIST).permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, LogoutFilter.class)
                 .addFilterBefore(exceptionHandlerFilter, JwtAuthenticationFilter.class);
 
         return http.build();
