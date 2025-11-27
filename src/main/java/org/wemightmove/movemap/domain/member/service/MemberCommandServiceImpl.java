@@ -17,8 +17,11 @@ import org.wemightmove.movemap.domain.member.repository.MemberFacilityRepository
 import org.wemightmove.movemap.domain.member.repository.MemberProgramRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
+import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
+import org.wemightmove.movemap.domain.notification.service.FcmPushService;
 import org.wemightmove.movemap.global.entity.RegionType;
+import org.wemightmove.movemap.global.enums.NotificationType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
@@ -29,33 +32,30 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-/**
- * FIXME: MemberCommand, Query 로 나누는게 나을지 아닐지 결정하기
- */
 public class MemberCommandServiceImpl implements MemberCommandService {
+
+    // 상수들
+    private static final String INVITE_PREFIX = "invite:";
+    private static final String SENT_LIST_PREFIX = "invites:sent:";
+    private static final String RECEIVED_LIST_PREFIX = "invites:received:";
 
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
     private final MemberRepository memberRepository;
     private final ParentChildRepository parentChildRepository;
-
-    private static final String INVITE_PREFIX = "invite:";
-    private static final String SENT_LIST_PREFIX = "invites:sent:";
-    private static final String RECEIVED_LIST_PREFIX = "invites:received:";
     private final MemberFacilityRepository memberFacilityRepository;
     private final MemberProgramRepository memberProgramRepository;
     private final NotificationRepository notificationRepository;
     private final RegionTypeRepository regionTypeRepository;
 
+    // 알림 전송 서비스
+    private final FcmPushService fcmPushService;
+
     @Value("${invite.expiration-days:3}")
     private long inviteExpirationDays;
 
-    /**
-     * FIXME: 초대 발송 후 알림 전송해야 하는지 결정하기
-     * 초대 발송
-     */
-    @Transactional
     @Override
+    @Transactional
     public SendInviteResponse sendInvite(Long parentId, String inviteCode) {
         // 자식과, 부모 조회
         Member child = memberRepository.findByUuid(inviteCode).orElseThrow(() -> new CustomException(ErrorCode.INVALID_INVITE_CODE));
@@ -105,9 +105,12 @@ public class MemberCommandServiceImpl implements MemberCommandService {
             throw new CustomException(ErrorCode.FAIL_SERIALIZATION);
         }
 
-        /**
-         * 초대를 받았다고 자식에게 알림을 보내는 로직 추가
-         */
+        // push 알림 전송 로직 추가
+        PushMessageResponse message = PushMessageResponse.inviteResponse(
+                parent.getNickname(),
+                child.getUuid()
+        );
+        fcmPushService.sendToMember(child.getId(), message);
 
         return new SendInviteResponse(child.getId(), child.getNickname());
     }
@@ -136,10 +139,11 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         // ParentChild 에 저장
         ParentChild saved = parentChildRepository.save(ParentChild.builder().parent(parent).child(child).build());
 
-        /**
-         * 이 사이에 자식이 요청을 수락했다고 알림을 보내는 로직
-         */
         deleteInviteFromRedis(parentId, childId);
+
+        // 초대 수락 알림 전송
+        PushMessageResponse pushMessageResponse = PushMessageResponse.invitedAccepted(child.getNickname());
+        fcmPushService.sendToMember(parent.getId(), pushMessageResponse);
 
         return new AcceptInvitationResponse(saved.getParent().getId(), saved.getParent().getNickname(), saved.getParent().getRole().name());
     }
@@ -156,11 +160,14 @@ public class MemberCommandServiceImpl implements MemberCommandService {
             throw new CustomException(ErrorCode.INVITE_NOT_FOUND);
         }
 
-        /**
-         * 이 사이에 부모한테 요청을 거절했다고 알림이 가는 코드
-         */
+        Member child = memberRepository.findById(childId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
         // Redis 에서 관련 초대 정보 모두 삭제
         deleteInviteFromRedis(parentId, childId);
+
+        // 초대 거절 알림 전송
+        PushMessageResponse pushMessageResponse = PushMessageResponse.inviteRejected(child.getNickname());
+        fcmPushService.sendToMember(parentId, pushMessageResponse);
     }
 
     @Override
