@@ -5,6 +5,11 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### QueryDSL - 자동 생성 파일 ###
+**/generated/
+**/Q*.java
+src/main/generated/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -41,10 +46,10 @@ src/main/resources/application-develop.yml
 src/main/resources/application-deploy.yml
 src/main/resources/application-redis.yml
 src/main/resources/application-loadtest.yml
-src/main/resources/application-firebase.yml
 src/main/resources/test_data/
 src/main/java/org/wemightmove/movemap/domain/stress_test/
 src/main/resources/heyoung-b2033-firebase-adminsdk-fbsvc-4dc5719dfb.json
+src/main/resources/application-firebase.yml
 
 ### docker ###
 docker-compose.yml

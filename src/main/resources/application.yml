@@ -1,3 +1,4 @@
 spring:
   profiles:
-    active: develop, redis, firebase
+    active: develop
+    include: redis
