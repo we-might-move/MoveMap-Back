@@ -20,4 +20,6 @@ public interface RegionTypeRepository extends JpaRepository<RegionType, Long> {
     @Query("SELECT r FROM RegionType r WHERE r.name = :name and r.parent.name = :parentName")
     Optional<RegionType> findRegionByNameAndParentName(@Param("name") String name, @Param("parentName") String parentName);
 
+    @Query("SELECT r FROM RegionType r WHERE r.name = :name")
+    Optional<RegionType> findRegionByName(@Param("name") String name);
 }

@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import org.locationtech.jts.geom.Point;
+
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -25,4 +30,15 @@ public class RegionType {
 
     @Column(name = "name", length = 100, nullable = false)
     private String name;
+
+    @JdbcTypeCode(SqlTypes.GEOMETRY)
+    @Column(name = "center_location", columnDefinition = "geometry(Point,4326)", nullable = false)
+    private Point centerLocation;
+
+    @Column(name = "center_latitude", precision = 10, scale = 8, nullable = false)
+    private BigDecimal centerLatitude;
+
+    @Column(name = "center_longitude", precision = 10, scale = 8, nullable = false)
+    private BigDecimal centerLongitude;
+
 }
