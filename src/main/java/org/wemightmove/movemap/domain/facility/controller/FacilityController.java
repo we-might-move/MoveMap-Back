@@ -12,6 +12,7 @@ import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest
 import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
 import org.wemightmove.movemap.domain.facility.service.FacilityCommandService;
 import org.wemightmove.movemap.domain.facility.service.FacilityQueryService;
 import org.wemightmove.movemap.global.enums.FacilityType;
@@ -107,6 +108,25 @@ public class FacilityController {
         Long memberId = member.getId();
 
         FacilityListResponse response = facilityQueryService.searchFacilityList(memberId, request, facilityTypes);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * FIXME : 강남 축구 -> 이런 식으로 검색해도 잘 나오도록 개선하기
+     */
+    @GetMapping("/facilities/search")
+    @Operation(
+            summary = "시설 검색",
+            description = "시설 검색만 진행합니다. 시설 리뷰를 쓸 때 시설을 찾는 용도로 사용됩니다."
+    )
+    public ResponseEntity<FacilitySimpleListResponse> searchFacilityListByKeyword(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @RequestParam(value = "keyword", required = false) String keyword
+    ) {
+        Long memberId = member.getId();
+
+        FacilitySimpleListResponse response = facilityQueryService.searchFacilityListByKeyword(memberId, keyword);
+
         return ResponseEntity.ok(response);
     }
 }

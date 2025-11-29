@@ -8,6 +8,7 @@ import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest
 import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
@@ -92,6 +93,16 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
         List<FacilityListResponse.FacilityInfo> facilities = facilityRepository.findListByViewport(request, regionCode, facilityTypes, memberId);
 
         return buildPagedResponse(facilities, request.size());
+    }
+
+    @Override
+    public FacilitySimpleListResponse searchFacilityListByKeyword(Long memberId, String keyword) {
+        Member member = getMember(memberId);
+
+        List<FacilitySimpleListResponse.FacilitySimpleInfo> facilities = facilityRepository.searchFacilitiesByNameAndFacilitySubtype(keyword).stream()
+                .map(FacilitySimpleListResponse.FacilitySimpleInfo::of).toList();
+
+        return new FacilitySimpleListResponse(facilities);
     }
 
     /**

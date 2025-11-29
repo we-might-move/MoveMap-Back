@@ -1,6 +1,7 @@
 package org.wemightmove.movemap.domain.facility.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.global.enums.FacilityType;
 
 import java.math.BigDecimal;
