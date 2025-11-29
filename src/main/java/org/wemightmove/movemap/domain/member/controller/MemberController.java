@@ -100,7 +100,7 @@ public class MemberController {
 
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
     @DeleteMapping
-    public ResponseEntity<MemberWithdrawResponse> withdrawMember(
+    public ResponseEntity<MemberWithdrawResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member
     ) {
         return ResponseEntity.ok(
@@ -110,7 +110,7 @@ public class MemberController {
 
     @Operation(summary = "회원 정보 수정", description = "회원 정보 수정을 진행합니다.")
     @PatchMapping
-    public ResponseEntity<MemberInfoResponse> withdrawMember(
+    public ResponseEntity<MemberInfoResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member,
             @ModelAttribute UpdateMemberRequest updateMemberRequest) {
         return ResponseEntity.ok(
