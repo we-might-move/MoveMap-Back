@@ -27,9 +27,6 @@ public class MemberController {
     private final MemberFacilityQueryService memberFacilityQueryService;
     private final MemberProgramQueryService memberProgramQueryService;
 
-    /**
-     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
-     */
     @Operation(summary = "보낸 초대 목록 조회(부모 사용)")
     @GetMapping("/invitations/sent")
     public ResponseEntity<SentInviteResponse> getSentInvitations(
@@ -38,9 +35,6 @@ public class MemberController {
         return ResponseEntity.ok(memberQueryService.getSentInviteList(member.getId()));
     }
 
-    /**
-     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
-     */
     @Operation(summary = "받은 초대 목록 조회(아이 사용)")
     @GetMapping("/invitations/received")
     public ResponseEntity<ReceivedInviteResponse> getReceivedInvitations(
@@ -49,9 +43,6 @@ public class MemberController {
         return ResponseEntity.ok(memberQueryService.getReceivedInviteList(member.getId()));
     }
 
-    /**
-     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
-     */
     @Operation(summary = "초대 보내기(부모 사용)")
     @PostMapping("/invitations")
     public ResponseEntity<SendInviteResponse> sendInvitation(
