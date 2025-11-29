@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.domain.facility.service.FacilityCommandService;
@@ -66,7 +67,7 @@ public class FacilityController {
     @GetMapping("/markers")
     public ResponseEntity<FacilityMarkerResponse> searchMarkers(
             @AuthenticationPrincipal CustomUserDetails member,
-            @Valid @ModelAttribute("searchConditions") FacilityMarkerRequest request,
+            @Valid @ModelAttribute(value = "searchConditions", name = "searchConditions") FacilityMarkerRequest request,
             @RequestParam(value = "facilityTypes", required = false) List<FacilityType> facilityTypes
             ) {
         FacilityMarkerResponse response = facilityQueryService.searchMarkers(member.getId(), request, facilityTypes);
@@ -81,13 +82,31 @@ public class FacilityController {
     )
     public ResponseEntity<FacilityListResponse> getInitialFacilityList(
             @AuthenticationPrincipal CustomUserDetails member,
-            @RequestParam(name = "cursor", required = false) Long cursor,
-            @RequestParam(name = "size" , required = false) Integer size
+            @RequestParam(value = "cursor", required = false) Long cursor,
+            @RequestParam(value = "size" , required = false) Integer size
     ) {
         Long memberId = member.getId();
         FacilityInitialListRequest request = new FacilityInitialListRequest(cursor, size);
 
         FacilityListResponse response = facilityQueryService.getFacilityList(memberId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/list")
+    @Operation(
+            summary = "뷰포트 기반 시설 리스트 조회",
+            description = "지도 뷰포트 영역 내 시설을 조회합니다. " +
+                    "검색 조건(키워드, 지역, 타입, 바우처)을 적용할 수 있으며, " +
+                    "검색 조건이 있으면 최신순, 없으면 거리순으로 정렬합니다."
+    )
+    public ResponseEntity<FacilityListResponse> getFacilityListByViewport(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @Valid @ModelAttribute(value = "searchConditions") FacilitySearchListRequest request,
+            @RequestParam(value = "facilityTypes", required = false) List<FacilityType> facilityTypes
+    ) {
+        Long memberId = member.getId();
+
+        FacilityListResponse response = facilityQueryService.searchFacilityList(memberId, request, facilityTypes);
         return ResponseEntity.ok(response);
     }
 }

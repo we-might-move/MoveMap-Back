@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
@@ -75,6 +76,20 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
         List<FacilityListResponse.FacilityInfo> facilities = facilityRepository.findListByRegionCode(
                 request, regionType.getCenterLatitude(), regionType.getCenterLongitude(), member.getRegionCode(), memberId
         );
+
+        return buildPagedResponse(facilities, request.size());
+    }
+
+    @Override
+    public FacilityListResponse searchFacilityList(Long memberId, FacilitySearchListRequest request, List<FacilityType> facilityTypes) {
+        /**
+         * FIXME : member 가 active 상태인지도 체크하기
+         */
+        Member member = getMember(memberId);
+
+        String regionCode = getRegionCode(request.city(), request.district());
+
+        List<FacilityListResponse.FacilityInfo> facilities = facilityRepository.findListByViewport(request, regionCode, facilityTypes, memberId);
 
         return buildPagedResponse(facilities, request.size());
     }
