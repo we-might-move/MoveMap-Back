@@ -65,7 +65,7 @@ public class MemberController {
     public ResponseEntity<Void> rejectInvite(
             @AuthenticationPrincipal CustomUserDetails member,
             @RequestBody RejectInvitationRequest rejectInvitationRequest) {
-        memberCommandService.rejectInvte(member.getId(), rejectInvitationRequest);
+        memberCommandService.rejectInvite(member.getId(), rejectInvitationRequest);
         return ResponseEntity.noContent().build();
     }
 
