@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilityReviewRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
@@ -128,5 +129,17 @@ public class FacilityController {
         FacilitySimpleListResponse response = facilityQueryService.searchFacilityListByKeyword(memberId, keyword);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/reviews")
+    public ResponseEntity<Void> registerFacilityReview(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @PathVariable("id") Long facilityId, @Valid @RequestBody FacilityReviewRequest request) {
+
+        Long memberId = member.getId();
+
+        facilityCommandService.saveFacilityReview(memberId, facilityId, request);
+
+        return ResponseEntity.noContent().build();
     }
 }
