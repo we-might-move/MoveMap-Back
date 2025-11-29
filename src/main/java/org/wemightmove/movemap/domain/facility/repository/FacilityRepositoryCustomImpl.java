@@ -15,15 +15,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
 
-    private static final double DEFAULT_RADIUS_METERS = 5000.0;
+    private static final double DEFAULT_RADIUS_METERS = 1000.0;
 
-    private final JPAQueryFactory queryFactory;
     private final EntityManager entityManager;
 
     @Override
     public List<FacilityMarkerResponse.MarkerInfo> findMakersByRegionCode(BigDecimal lat, BigDecimal lng, int maxResults) {
 
-        // ✅ Native SQL 직접 사용 (Hibernate 파서 완전 우회)
         String sql = """
             SELECT 
                 f.id,
