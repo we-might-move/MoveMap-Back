@@ -149,7 +149,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
     @Override
     @Transactional
-    public void rejectInvte(Long childId, RejectInvitationRequest rejectInvitationRequest) {
+    public void rejectInvite(Long childId, RejectInvitationRequest rejectInvitationRequest) {
         Long parentId = rejectInvitationRequest.parentId();
 
         // Redis에서 초대 정보 존재 확인

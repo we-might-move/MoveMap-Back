@@ -27,9 +27,6 @@ public class MemberController {
     private final MemberFacilityQueryService memberFacilityQueryService;
     private final MemberProgramQueryService memberProgramQueryService;
 
-    /**
-     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
-     */
     @Operation(summary = "보낸 초대 목록 조회(부모 사용)")
     @GetMapping("/invitations/sent")
     public ResponseEntity<SentInviteResponse> getSentInvitations(
@@ -38,9 +35,6 @@ public class MemberController {
         return ResponseEntity.ok(memberQueryService.getSentInviteList(member.getId()));
     }
 
-    /**
-     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
-     */
     @Operation(summary = "받은 초대 목록 조회(아이 사용)")
     @GetMapping("/invitations/received")
     public ResponseEntity<ReceivedInviteResponse> getReceivedInvitations(
@@ -49,9 +43,6 @@ public class MemberController {
         return ResponseEntity.ok(memberQueryService.getReceivedInviteList(member.getId()));
     }
 
-    /**
-     * FIXME : memberId 쿼리로 받는 것 로그인 구현 완료 되면 수정
-     */
     @Operation(summary = "초대 보내기(부모 사용)")
     @PostMapping("/invitations")
     public ResponseEntity<SendInviteResponse> sendInvitation(
@@ -74,7 +65,7 @@ public class MemberController {
     public ResponseEntity<Void> rejectInvite(
             @AuthenticationPrincipal CustomUserDetails member,
             @RequestBody RejectInvitationRequest rejectInvitationRequest) {
-        memberCommandService.rejectInvte(member.getId(), rejectInvitationRequest);
+        memberCommandService.rejectInvite(member.getId(), rejectInvitationRequest);
         return ResponseEntity.noContent().build();
     }
 
@@ -109,7 +100,7 @@ public class MemberController {
 
     @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
     @DeleteMapping
-    public ResponseEntity<MemberWithdrawResponse> withdrawMember(
+    public ResponseEntity<MemberWithdrawResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member
     ) {
         return ResponseEntity.ok(
@@ -119,11 +110,18 @@ public class MemberController {
 
     @Operation(summary = "회원 정보 수정", description = "회원 정보 수정을 진행합니다.")
     @PatchMapping
-    public ResponseEntity<MemberInfoResponse> withdrawMember(
+    public ResponseEntity<MemberInfoResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member,
             @ModelAttribute UpdateMemberRequest updateMemberRequest) {
         return ResponseEntity.ok(
                 memberCommandService.updateMember(member.getId(), updateMemberRequest)
         );
+    }
+
+    @Operation(summary = "회원 정보 조회", description = "회원 정보를 조회합니다.")
+    @GetMapping
+    public ResponseEntity<MemberInfoResponse> getMemberInfo(
+            @AuthenticationPrincipal CustomUserDetails member) {
+        return ResponseEntity.ok(memberQueryService.getMemberInfo(member.getId()));
     }
 }
