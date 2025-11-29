@@ -1,8 +1,11 @@
 package org.wemightmove.movemap.domain.facility.service;
 
+import jakarta.persistence.Tuple;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.wemightmove.movemap.domain.facility.dto.FacilityInfoProjection;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
@@ -18,8 +21,11 @@ import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -103,6 +109,30 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
                 .map(FacilitySimpleListResponse.FacilitySimpleInfo::of).toList();
 
         return new FacilitySimpleListResponse(facilities);
+    }
+
+    @Override
+    public FacilityListResponse.FacilityInfo getFacilityInfo(Long memberId, Long facilityId, BigDecimal lat, BigDecimal lng) {
+        Member member = getMember(memberId);
+
+        FacilityInfoProjection projection = facilityRepository.findFacilityInfoWithLocation(
+                facilityId, memberId, lat, lng
+        ).orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
+
+        return new FacilityListResponse.FacilityInfo(
+                projection.getId(),
+                projection.getName(),
+                projection.getLatitude(),
+                projection.getLongitude(),
+                projection.getFacilityType(),
+                projection.getFacilitySubtype(),
+                projection.getAddress(),
+                projection.getIsVoucherAvailable(),
+                projection.getDistanceMeters(),
+                projection.getAvgRating(),
+                projection.getReviewCount(),
+                projection.getIsBookmarked()
+        );
     }
 
     /**

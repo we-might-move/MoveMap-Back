@@ -1,8 +1,6 @@
 package org.wemightmove.movemap.domain.facility.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.wemightmove.movemap.domain.facility.entity.Facility;
-import org.wemightmove.movemap.global.enums.FacilityType;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -58,6 +56,5 @@ public record FacilityListResponse(
 
             @Schema(description = "즐겨찾기 여부", example = "true")
             boolean isBookmarked
-    ) {
-    }
+    ) { }
 }

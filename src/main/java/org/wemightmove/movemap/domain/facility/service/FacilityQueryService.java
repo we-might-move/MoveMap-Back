@@ -8,6 +8,7 @@ import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerRespon
 import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
 import org.wemightmove.movemap.global.enums.FacilityType;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface FacilityQueryService {
@@ -16,4 +17,5 @@ public interface FacilityQueryService {
     FacilityListResponse getFacilityList(Long memberId, FacilityInitialListRequest request);
     FacilityListResponse searchFacilityList(Long memberId, FacilitySearchListRequest request, List<FacilityType> facilityTypes);
     FacilitySimpleListResponse searchFacilityListByKeyword(Long memberId, String keyword);
+    FacilityListResponse.FacilityInfo getFacilityInfo(Long memberId, Long facilityId, BigDecimal lat, BigDecimal lng);
 }

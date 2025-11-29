@@ -1,6 +1,7 @@
 package org.wemightmove.movemap.domain.facility.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -110,6 +111,28 @@ public class FacilityController {
         Long memberId = member.getId();
 
         FacilityListResponse response = facilityQueryService.searchFacilityList(memberId, request, facilityTypes);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "시설 상세 조회",
+            description = "시설의 상세 정보를 조회합니다."
+    )
+    public ResponseEntity<FacilityListResponse.FacilityInfo> getFacilityDetail(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @PathVariable("id") Long facilityId,
+            @RequestParam("lat")
+            @Parameter(description = "사용자 위도", example = "37.5219")
+            BigDecimal latitude,
+            @RequestParam("lng")
+            @Parameter(description = "사용자 경도", example = "127.1230")
+            BigDecimal longitude
+    ) {
+        Long memberId = member.getId();
+
+        FacilityListResponse.FacilityInfo response = facilityQueryService.getFacilityInfo(memberId, facilityId, latitude, longitude);
+
         return ResponseEntity.ok(response);
     }
 
