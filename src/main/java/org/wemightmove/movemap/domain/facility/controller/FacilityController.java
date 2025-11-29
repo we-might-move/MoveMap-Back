@@ -7,18 +7,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
-import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
-import org.wemightmove.movemap.domain.facility.dto.request.FacilityReviewRequest;
-import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
+import org.wemightmove.movemap.domain.facility.dto.request.*;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilityReviewListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
 import org.wemightmove.movemap.domain.facility.service.FacilityCommandService;
 import org.wemightmove.movemap.domain.facility.service.FacilityQueryService;
+import org.wemightmove.movemap.domain.facility.service.FacilityReviewService;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -28,6 +28,7 @@ import java.util.List;
 public class FacilityController {
     private final FacilityCommandService facilityCommandService;
     private final FacilityQueryService facilityQueryService;
+    private final FacilityReviewService facilityReviewService;
 
     @PostMapping("/{id}/bookmarks")
     public ResponseEntity<Void> bookmarkFacility(@AuthenticationPrincipal CustomUserDetails member, @PathVariable("id") Long facilityId) {
@@ -138,8 +139,37 @@ public class FacilityController {
 
         Long memberId = member.getId();
 
-        facilityCommandService.saveFacilityReview(memberId, facilityId, request);
+        facilityReviewService.saveFacilityReview(memberId, facilityId, request);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/reviews")
+    public ResponseEntity<FacilityReviewListResponse> getFacilityReviewList(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @RequestParam(value = "lat", required = false) BigDecimal latitude,
+            @RequestParam(value = "lng", required = false) BigDecimal longitude,
+            @RequestParam(value = "city", required = false) String city,
+            @RequestParam(value = "district", required = false) String district,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "cursor", required = false) Long cursor,
+            @RequestParam(value = "size", required = false, defaultValue = "20") Integer size
+    ) {
+
+        Long memberId = member.getId();
+
+        FacilityReviewListRequest request = new FacilityReviewListRequest(
+                latitude,
+                longitude,
+                city,
+                district,
+                keyword,
+                cursor,
+                size
+        );
+
+        FacilityReviewListResponse response = facilityReviewService.getReviewList(memberId, request);
+
+        return ResponseEntity.ok(response);
     }
 }
