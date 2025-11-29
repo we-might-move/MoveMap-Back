@@ -9,45 +9,31 @@ import org.wemightmove.movemap.domain.facility.entity.FacilityReview;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.facility.repository.FacilityReviewRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
-import org.wemightmove.movemap.domain.member.entity.MemberFacility;
-import org.wemightmove.movemap.domain.member.repository.MemberFacilityRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
-public class FacilityCommandServiceImpl implements FacilityCommandService {
+public class FacilityReviewServiceImpl implements FacilityReviewService {
 
+    private final FacilityReviewRepository facilityReviewRepository;
     private final MemberRepository memberRepository;
     private final FacilityRepository facilityRepository;
-    private final MemberFacilityRepository memberFacilityRepository;
-    private final FacilityReviewRepository facilityReviewRepository;
 
     @Override
     @Transactional
-    public void addBookmarkFacility(Long memberId, Long facilityId) {
+    public void saveFacilityReview(Long memberId, Long facilityId, FacilityReviewRequest request) {
         Member member = getMember(memberId);
         Facility facility = getFacility(facilityId);
 
-        if (memberFacilityRepository.existsMemberFacilitiesByMemberAndFacility(member, facility)) {
-            throw new CustomException(ErrorCode.ALREADY_ADDED_BOOKMARK);
+        if (facilityReviewRepository.existsFacilityReviewByMemberAndFacility(member, facility)) {
+            throw new CustomException(ErrorCode.ALREADY_ADDED_FACILITY_REVIEW);
         }
 
-        memberFacilityRepository.save(MemberFacility.from(member, facility));
-    }
+        FacilityReview facilityReview = FacilityReview.from(member, facility, request);
 
-    @Override
-    @Transactional
-    public void deleteBookmarkFacility(Long memberId, Long facilityId) {
-        Member member = getMember(memberId);
-        Facility facility = getFacility(facilityId);
-
-        if(!memberFacilityRepository.existsMemberFacilitiesByMemberAndFacility(member, facility)) {
-            throw new CustomException(ErrorCode.ALREADY_DELETED_BOOKMARK);
-        }
-
-        memberFacilityRepository.deleteByMemberAndFacility(member, facility);
+        facilityReviewRepository.save(facilityReview);
     }
 
     private Member getMember(Long memberId) {
