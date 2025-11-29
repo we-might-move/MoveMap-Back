@@ -6,15 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.wemightmove.movemap.domain.member.dto.response.InviteInfo;
-import org.wemightmove.movemap.domain.member.dto.response.MemberInfo;
-import org.wemightmove.movemap.domain.member.dto.response.ReceivedInviteResponse;
-import org.wemightmove.movemap.domain.member.dto.response.SentInviteResponse;
+import org.wemightmove.movemap.domain.member.dto.response.*;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
+import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 
 import java.util.*;
 
@@ -27,6 +25,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private final ObjectMapper objectMapper;
     private final MemberRepository memberRepository;
     private final ParentChildRepository parentChildRepository;
+    private final RegionTypeRepository regionTypeRepository;
 
     private static final String INVITE_PREFIX = "invite:";
     private static final String SENT_LIST_PREFIX = "invites:sent:";
@@ -118,11 +117,30 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         return new ReceivedInviteResponse(child.getUuid(), parentList, inviteInfoList);
     }
 
+    @Override
+    public MemberInfoResponse getMemberInfo(Long memberId) {
+
+        Member member = getMember(memberId);
+
+        String city = getCityNameByRegionCode(member.getRegionCode());
+        String district = getDistrictNameRegionCode(member.getRegionCode());
+
+        return MemberInfoResponse.from(member, city, district);
+    }
+
     private String buildInviteKey(Long parentId, Long childId) {
         return INVITE_PREFIX + parentId + ":" + childId;
     }
 
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private String getCityNameByRegionCode(String regionCode) {
+        return regionTypeRepository.findParentRegionTypeByPrefix(regionCode.substring(0, 2)).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getName();
+    }
+
+    private String getDistrictNameRegionCode(String regionCode) {
+        return regionTypeRepository.findChildRegionTypeByPrefix(regionCode.substring(0, 4)).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getName();
     }
 }

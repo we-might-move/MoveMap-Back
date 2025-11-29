@@ -11,7 +11,7 @@ import org.wemightmove.movemap.domain.member.dto.response.SendInviteResponse;
 public interface MemberCommandService {
     SendInviteResponse sendInvite(Long parentId, String inviteCode);
     AcceptInvitationResponse acceptInvite(Long childId, AcceptInvitationRequest acceptInvitationRequest);
-    void rejectInvte(Long childId, RejectInvitationRequest rejectInvitationRequest);
+    void rejectInvite(Long childId, RejectInvitationRequest rejectInvitationRequest);
     MemberWithdrawResponse withdrawMember(Long memberId);
     MemberInfoResponse updateMember(Long memberId, UpdateMemberRequest updateMemberRequest);
 }
