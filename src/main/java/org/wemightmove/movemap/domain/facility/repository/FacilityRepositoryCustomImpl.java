@@ -5,7 +5,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.global.enums.FacilityType;
 
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
 
     private static final double DEFAULT_RADIUS_METERS = 1000.0;
+    private static final int FETCH_SIZE_FOR_HAS_NEXT = 1; // hasNext 판단용 추가 조회 개수
 
     private final EntityManager entityManager;
 
@@ -160,6 +163,92 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
         }
 
         return executeMarkerQuery(query);
+    }
+
+    @Override
+    public List<FacilityListResponse.FacilityInfo> findListByRegionCode(FacilityInitialListRequest request, BigDecimal lat, BigDecimal lng, String regionCode, Long memberId) {
+
+        String sql = """
+            SELECT 
+                f.id,
+                f.name,
+                f.latitude,
+                f.longitude,
+                f.facility_type,
+                f.facility_subtype,
+                f.address,
+                f.is_voucher_available,
+                ST_Distance(
+                    f.location::geography,
+                    ST_SetSRID(ST_MakePoint(:userLng, :userLat), 4326)::geography
+                ) AS distance_meters,
+                COALESCE(AVG(fr.rating), 0) AS avg_rating,
+                COUNT(fr.id) AS review_count,
+                CASE WHEN mf.id IS NOT NULL THEN true ELSE false END AS is_bookmarked
+            FROM facility f
+            LEFT JOIN facility_review fr ON f.id = fr.facility_id
+            LEFT JOIN member_facility mf ON f.id = mf.facility_id AND mf.member_id = :memberId
+            WHERE ST_DWithin(
+                f.location::geography,
+                ST_SetSRID(ST_MakePoint(:userLng, :userLat), 4326)::geography,
+                :radius
+            )
+            AND f.region_cd LIKE :regionCode || '%'
+            """;
+
+            // 커서 기반 페이징
+            if (request.hasCursor()) {
+                sql += " AND f.id < :cursor";
+            }
+
+            sql += """
+            GROUP BY f.id, f.name, f.latitude, f.longitude, f.facility_type, 
+                     f.facility_subtype, f.address, f.is_voucher_available, 
+                     distance_meters, mf.id
+            ORDER BY distance_meters ASC, f.id DESC
+            LIMIT :limit
+            """;
+
+            Query query = entityManager.createNativeQuery(sql);
+            query.setParameter("userLat", lat);
+            query.setParameter("userLng", lng);
+            query.setParameter("radius", DEFAULT_RADIUS_METERS);
+            query.setParameter("regionCode", regionCode);
+            query.setParameter("memberId", memberId);
+
+            if (request.hasCursor()) {
+                query.setParameter("cursor", request.cursor());
+            }
+
+            // hasNext 판단을 위해 size + 1개 조회
+            query.setParameter("limit", request.size() + FETCH_SIZE_FOR_HAS_NEXT);
+
+            return executeFacilityListQuery(query);
+    }
+
+    /**
+     * Query 실행 및 FacilityInfo 변환
+     */
+    private List<FacilityListResponse.FacilityInfo> executeFacilityListQuery(Query query) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(row -> new FacilityListResponse.FacilityInfo(
+                        ((Number) row[0]).longValue(),                    // id
+                        (String) row[1],                                  // name
+                        (BigDecimal) row[2],                              // latitude
+                        (BigDecimal) row[3],                              // longitude
+                        (String) row[4],                                  // facility_type
+                        (String) row[5],                                  // facility_subtype
+                        (String) row[6],                                  // address
+                        (Boolean) row[7],                                 // is_voucher_available
+                        row[8] != null ? ((Number) row[8]).doubleValue() : null,  // distance_meters
+                        row[9] != null ? ((Number) row[9]).doubleValue() : 0.0,   // avg_rating
+                        row[10] != null ? ((Number) row[10]).longValue() : 0L,    // review_count
+                        (Boolean) row[11]                                 // is_bookmarked
+                ))
+                .collect(Collectors.toList());
     }
 
     /**

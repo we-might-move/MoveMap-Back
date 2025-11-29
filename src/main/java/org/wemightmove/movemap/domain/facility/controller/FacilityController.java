@@ -7,7 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.domain.facility.service.FacilityCommandService;
 import org.wemightmove.movemap.domain.facility.service.FacilityQueryService;
@@ -68,6 +70,24 @@ public class FacilityController {
             @RequestParam(value = "facilityTypes", required = false) List<FacilityType> facilityTypes
             ) {
         FacilityMarkerResponse response = facilityQueryService.searchMarkers(member.getId(), request, facilityTypes);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/list/initial")
+    @Operation(
+            summary = "초기 시설 리스트 조회",
+            description = "앱 진입 시 사용자 위치 기반으로 시설 리스트를 조회합니다. " +
+                    "토큰에서 추출한 회원의 지역 중심으로 반경 5km 내 시설을 거리순으로 정렬하여 반환합니다."
+    )
+    public ResponseEntity<FacilityListResponse> getInitialFacilityList(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @RequestParam(name = "cursor", required = false) Long cursor,
+            @RequestParam(name = "size" , required = false) Integer size
+    ) {
+        Long memberId = member.getId();
+        FacilityInitialListRequest request = new FacilityInitialListRequest(cursor, size);
+
+        FacilityListResponse response = facilityQueryService.getFacilityList(memberId, request);
         return ResponseEntity.ok(response);
     }
 }

@@ -3,7 +3,9 @@ package org.wemightmove.movemap.domain.facility.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
@@ -59,6 +61,43 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
                 markers.size(),
                 request.hasSearchConditions()
         );
+    }
+
+    @Override
+    public FacilityListResponse getFacilityList(Long memberId, FacilityInitialListRequest request) {
+        /**
+         * FIXME : member 가 active 상태인지도 체크하기
+         */
+        Member member = getMember(memberId);
+
+        RegionType regionType = regionTypeRepository.findChildRegionTypeByPrefix(member.getRegionCode()).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT));
+
+        List<FacilityListResponse.FacilityInfo> facilities = facilityRepository.findListByRegionCode(
+                request, regionType.getCenterLatitude(), regionType.getCenterLongitude(), member.getRegionCode(), memberId
+        );
+
+        return buildPagedResponse(facilities, request.size());
+    }
+
+    /**
+     * 페이징 응답 생성
+     * - size + 1개를 조회하여 hasNext 판단
+     * - 실제 반환은 size 개만
+     */
+    private FacilityListResponse buildPagedResponse(List<FacilityListResponse.FacilityInfo> facilities, int size) {
+        boolean hasNext = facilities.size() > size;
+
+        // 실제 반환할 리스트 (size 개만)
+        List<FacilityListResponse.FacilityInfo> content = hasNext
+                ? facilities.subList(0, size)
+                : facilities;
+
+        // 다음 커서 (마지막 항목의 ID)
+        Long nextCursor = hasNext && !content.isEmpty()
+                ? content.get(content.size() - 1).id()
+                : null;
+
+        return FacilityListResponse.of(content, nextCursor, hasNext);
     }
 
     private String getRegionCode(String city, String district) {
