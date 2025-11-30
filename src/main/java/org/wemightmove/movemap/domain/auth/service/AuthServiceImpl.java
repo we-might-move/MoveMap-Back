@@ -6,13 +6,13 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
 import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.global.client.KakaoClient;
 import org.wemightmove.movemap.global.client.dto.KakaoProfileResponse;
-import org.wemightmove.movemap.global.client.dto.KakaoTokenResponse;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.jwt.JwtTokenProvider;
@@ -75,10 +75,9 @@ public class AuthServiceImpl implements AuthService{
     }
 
     @Override
-    public KakaoLoginResponse loginWithKakao(String code) {
+    public KakaoLoginResponse loginWithKakao(KakaoLoginRequest request) {
 
-        KakaoTokenResponse kakaoTokenResponse = kakaoClient.getAccessToken(code);
-        KakaoProfileResponse kakaoProfileResponse = kakaoClient.getUserInfo(kakaoTokenResponse.accessToken());
+        KakaoProfileResponse kakaoProfileResponse = kakaoClient.getUserInfo(request.accessToken());
         Member member = memberRepository.findByKakaoId(kakaoProfileResponse.id()).orElse(null);
 
         if(member == null) {
