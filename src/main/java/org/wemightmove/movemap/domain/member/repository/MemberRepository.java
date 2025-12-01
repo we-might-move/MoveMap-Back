@@ -9,8 +9,11 @@ import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email);
+    boolean existsByEmail(String email);
     Optional<Member> findByKakaoId(Long kakaoId);
+    boolean existsByKakaoId(Long kakaoId);
     Optional<Member> findByUuid(String uuid);
+    boolean existsByUuid(String uuid);
     @Query("SELECT COUNT(m) > 0 FROM Member m " +
             "WHERE m.nickname = :nickname " +
             "AND m.id != :excludeMemberId " +

@@ -7,13 +7,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
 import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
+import org.wemightmove.movemap.domain.auth.dto.request.SignupRequest;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.auth.dto.response.LoginResponse;
 import org.wemightmove.movemap.domain.auth.service.AuthService;
@@ -31,8 +30,12 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
 
-    @Value("${url.signup}")
-    private String signupUrl;
+    @Operation(summary = "회원가입", description = "")
+    @PostMapping("/signup")
+    public ResponseEntity<Void> signup(@RequestBody @Valid SignupRequest request) {
+        authService.signup(request);
+        return ResponseEntity.ok().build();
+    }
 
     @Operation(summary = "자체 로그인", description = "서비스 자체 로그인")
     @PostMapping("/login")
@@ -60,17 +63,13 @@ public class AuthController {
 
     @Operation(summary = "카카오 로그인 인가 코드 전달", description = "카카오 로그인 인가 코드를 전달합니다. 가입된 회원이면 토큰을 발급해 응답하고, 미가입 회원이면 회원 가입 페이지로 리다이렉트시킵니다.")
     @PostMapping("/kakao")
-    public ResponseEntity<LoginResponse> kakaoCallback(@RequestParam("code") String code, HttpServletResponse response) {
-        KakaoLoginResponse kakaoLoginResponse = authService.loginWithKakao(code);
+    public ResponseEntity<LoginResponse> kakaoCallback(@RequestBody KakaoLoginRequest request, HttpServletResponse response) {
+        KakaoLoginResponse kakaoLoginResponse = authService.loginWithKakao(request);
         if(kakaoLoginResponse.isNewMember()) {
-            String redirectUrl = signupUrl + "?kakaoId=" + kakaoLoginResponse.kakaoId();
-            return ResponseEntity
-                    .status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, redirectUrl)
-                    .build();
+            return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.kakaoId(), kakaoLoginResponse.isNewMember()));
         } else {
             addCookie(response, "refreshToken", kakaoLoginResponse.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
-            return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.accessToken()));
+            return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.accessToken(), kakaoLoginResponse.isNewMember()));
         }
     }
 
