@@ -6,12 +6,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.global.enums.FacilityType;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.wemightmove.movemap.global.util.ProgramBitmaskUtil.ageToBitmask;
@@ -229,6 +232,75 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
         log.debug("Executing viewport marker query - SQL: {}", sql.toString());
 
         return executeProgramMarkerQuery(query);
+    }
+
+    @Override
+    public List<ProgramListResponse.ProgramItem> findProgramsByRegion(
+            Long memberId,
+            String regionCode,
+            Long cursor,
+            int size
+    ) {
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("""
+            SELECT
+                p.id,
+                p.name,
+                p.facility_type,
+                p.facility_subtype,
+                p.latitude,
+                p.longitude,
+                p.address,
+                p.hmpg_url,
+                p.begin_date,
+                p.end_date,
+                p.weekday_number,
+                p.price,
+                p.start_time,
+                p.end_time,
+                p.target,
+                p.capacity,
+                NULL as distance,
+                COALESCE(AVG(pr.rating), 0) as avg_rating,
+                COUNT(pr.id) as review_count,
+                CASE WHEN mp.id IS NOT NULL THEN true ELSE false END as is_bookmarked
+            FROM program p
+            LEFT JOIN program_review pr ON p.id = pr.program_id
+            LEFT JOIN member_program mp ON p.id = mp.program_id AND mp.member_id = :memberId
+            WHERE p.region_cd LIKE :regionPrefix
+            """);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("memberId", memberId);
+        params.put("regionPrefix", regionCode + "%");
+
+        // 커서 기반 페이징
+        if (cursor != null) {
+            sql.append("AND p.id < :cursor ");
+            params.put("cursor", cursor);
+        }
+
+        sql.append("""
+            GROUP BY p.id, p.name, p.facility_type, p.facility_subtype,
+                     p.latitude, p.longitude, p.address, p.region_cd, p.hmpg_url,
+                     p.begin_date, p.end_date, p.weekday_number, p.price,
+                     p.start_time, p.end_time, p.target, p.capacity, mp.id
+            ORDER BY p.id DESC
+            LIMIT :size
+            """);
+
+        params.put("size", size);
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        params.forEach(query::setParameter);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(ProgramListResponse.ProgramItem::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     private List<ProgramMarkerResponse.MarkerInfo> executeProgramMarkerQuery(Query query) {

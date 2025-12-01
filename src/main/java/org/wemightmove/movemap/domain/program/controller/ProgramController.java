@@ -2,11 +2,14 @@ package org.wemightmove.movemap.domain.program.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.domain.program.service.ProgramQueryService;
 import org.wemightmove.movemap.global.enums.FacilityType;
@@ -62,6 +65,24 @@ public class ProgramController {
             @RequestParam(value = "weekDayTypes", required = false) List<WeekDayType> weekDayTypes
     ) {
         ProgramMarkerResponse response = programQueryService.getMarkersBySearch(request, facilityTypes, weekDayTypes, member.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 1. 프로그램 리스트 조회 (초기) - 사용자 지역 기반
+     * GET /api/v1/programs/list?cursor=100&size=20
+     */
+    @GetMapping("/list/initial")
+    @Operation(summary = "프로그램 리스트 조회 (초기)",
+            description = "사용자가 등록한 지역 기반으로 프로그램 목록을 조회합니다. 커서 기반 페이징을 사용합니다.")
+    public ResponseEntity<ProgramListResponse> getProgramsByUserRegion(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @Valid @ModelAttribute ProgramInitialListRequest request
+    ) {
+        Long memberId = member.getId();
+
+        ProgramListResponse response = programQueryService.getPrograms(memberId, request);
+
         return ResponseEntity.ok(response);
     }
 }

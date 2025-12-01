@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.domain.program.repository.ProgramRepository;
 import org.wemightmove.movemap.global.entity.RegionType;
@@ -64,6 +66,27 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
                 totalPrograms,
                 request.hasSearchConditions()
         );
+    }
+
+    @Override
+    public ProgramListResponse getPrograms(Long memberId, ProgramInitialListRequest request) {
+        Member member = getMember(memberId);
+
+        int fetchSize = request.size() + 1;
+        List<ProgramListResponse.ProgramItem> programs = programRepository.findProgramsByRegion(
+                memberId, member.getRegionCode(), request.cursor(), fetchSize
+        );
+
+        // 다음 페이지 존재 여부 확인
+        boolean hasNext = programs.size() > request.size();
+        if(hasNext) {
+            programs = programs.subList(0, request.size());
+        }
+
+        // 다음 커서 계산
+        Long nextCursor = hasNext && !programs.isEmpty() ? programs.get(programs.size() - 1).id() : null;
+
+        return ProgramListResponse.of(programs, nextCursor, hasNext);
     }
 
     private String getRegionCode(String city, String district) {
