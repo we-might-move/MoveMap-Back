@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
 import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
+import org.wemightmove.movemap.domain.auth.dto.request.SignupRequest;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.auth.dto.response.LoginResponse;
 import org.wemightmove.movemap.domain.auth.service.AuthService;
@@ -28,6 +29,13 @@ public class AuthController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
+
+    @Operation(summary = "회원가입", description = "")
+    @PostMapping("/signup")
+    public ResponseEntity<Void> signup(@RequestBody @Valid SignupRequest request) {
+        authService.signup(request);
+        return ResponseEntity.ok().build();
+    }
 
     @Operation(summary = "자체 로그인", description = "서비스 자체 로그인")
     @PostMapping("/login")
