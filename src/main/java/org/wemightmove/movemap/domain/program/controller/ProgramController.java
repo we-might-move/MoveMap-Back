@@ -1,12 +1,17 @@
 package org.wemightmove.movemap.domain.program.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.program.dto.request.*;
 import org.wemightmove.movemap.domain.program.dto.response.*;
@@ -17,6 +22,7 @@ import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -161,7 +167,48 @@ public class ProgramController {
 
         Long memberId = member.getId();
         ProgramReviewListResponse result = programReviewQueryService.getProgramReviews(memberId, request);
-        
+
         return ResponseEntity.ok(result);
+    }
+
+    @Operation(
+            summary = "프로그램 상세 조회",
+            description = "프로그램 ID로 상세 정보를 조회합니다. 인증된 사용자의 경우 북마크 여부와 거리가 포함됩니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = ProgramDetailResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "프로그램을 찾을 수 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<ProgramDetailResponse> getProgramDetail(
+            @Schema(description = "프로그램 ID", example = "1")
+            @PathVariable("id") Long programId,
+
+            @Schema(description = "사용자 위도 (거리 계산용)", example = "37.5665")
+            @RequestParam(value = "userLatitude", required = false) Double userLatitude,
+
+            @Schema(description = "사용자 경도 (거리 계산용)", example = "126.9780")
+            @RequestParam(value = "userLongitude", required = false) Double userLongitude,
+
+            @AuthenticationPrincipal CustomUserDetails member
+    ) {
+        Long memberId = member.getId();
+
+        ProgramDetailResponse response = programQueryService.getProgramDetail(
+                programId,
+                memberId,
+                userLatitude,
+                userLongitude
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

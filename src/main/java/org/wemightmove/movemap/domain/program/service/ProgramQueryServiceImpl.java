@@ -5,10 +5,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.domain.program.dto.ProgramItem;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramSearchByKeywordRequest;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramDetailResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
@@ -20,6 +22,7 @@ import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -139,6 +142,28 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
         Long nextCursor = hasNext ? content.get(content.size() - 1).id() : null;
 
         return ProgramSimpleListResponse.of(content, nextCursor, hasNext);
+    }
+
+    @Override
+    public ProgramDetailResponse getProgramDetail(
+            Long programId,
+            Long memberId,
+            Double userLatitude,
+            Double userLongitude
+    ) {
+        BigDecimal userLatDecimal = userLatitude != null ? BigDecimal.valueOf(userLatitude) : null;
+        BigDecimal userLngDecimal = userLongitude != null ? BigDecimal.valueOf(userLongitude) : null;
+
+        ProgramItem item = programRepository.findProgramDetailById(
+                        programId,
+                        memberId,
+                        userLatDecimal,
+                        userLngDecimal
+                )
+                .map(ProgramItem::from)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        return ProgramDetailResponse.from(item);
     }
 
     private String getRegionCode(String city, String district) {
