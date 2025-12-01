@@ -24,4 +24,13 @@ public class MemberProgram {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "program_id", nullable = false)
     private Program program;
+
+    public static MemberProgram from(Member member, Program program) {
+        return new MemberProgram(member, program);
+    }
+
+    private MemberProgram(Member member, Program program) {
+        this.member = member;
+        this.program = program;
+    }
 }

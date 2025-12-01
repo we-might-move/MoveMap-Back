@@ -15,6 +15,7 @@ import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.program.dto.request.*;
 import org.wemightmove.movemap.domain.program.dto.response.*;
+import org.wemightmove.movemap.domain.program.service.ProgramCommandService;
 import org.wemightmove.movemap.domain.program.service.ProgramQueryService;
 import org.wemightmove.movemap.domain.program.service.ProgramReviewCommandService;
 import org.wemightmove.movemap.domain.program.service.ProgramReviewQueryService;
@@ -22,7 +23,6 @@ import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -34,6 +34,19 @@ public class ProgramController {
     private final ProgramQueryService programQueryService;
     private final ProgramReviewCommandService programReviewCommandService;
     private final ProgramReviewQueryService programReviewQueryService;
+    private final ProgramCommandService programCommandService;
+
+    @PostMapping("/{id}/bookmarks")
+    public ResponseEntity<Void> bookmarkFacility(@AuthenticationPrincipal CustomUserDetails member, @PathVariable("id") Long programId) {
+        programCommandService.addBookmarkProgram(member.getId(), programId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/bookmarks")
+    public ResponseEntity<Void> deleteBookmarkFacility(@AuthenticationPrincipal CustomUserDetails member, @PathVariable("id") Long programId) {
+        programCommandService.deleteBookmarkProgram(member.getId(), programId);
+        return ResponseEntity.noContent().build();
+    }
 
     @Operation(summary = "프로그램 마커 조회(초기)")
     @GetMapping("/markers/initial")
