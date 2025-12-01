@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
 import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
+import org.wemightmove.movemap.domain.auth.dto.request.SendVerificationMailRequest;
 import org.wemightmove.movemap.domain.auth.dto.request.SignupRequest;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.auth.dto.response.LoginResponse;
@@ -71,6 +72,13 @@ public class AuthController {
             addCookie(response, "refreshToken", kakaoLoginResponse.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
             return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.accessToken(), kakaoLoginResponse.isNewMember()));
         }
+    }
+
+    @Operation(summary = "이메일 인증 코드 전송", description = "이메일 인증 코드를 전송합니다.")
+    @PostMapping("/email")
+    public ResponseEntity<Void> sendVerificationMail(@RequestBody @Valid SendVerificationMailRequest request) {
+        authService.sendVerificationMail(request);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "토큰 인증 테스트", description = "토큰 인증 테스트용 API입니다. 추후 삭제 예정입니다.")
