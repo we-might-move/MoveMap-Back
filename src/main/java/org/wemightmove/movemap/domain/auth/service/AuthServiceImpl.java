@@ -1,6 +1,12 @@
 package org.wemightmove.movemap.domain.auth.service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -8,9 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.SignupRequest;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.wemightmove.movemap.domain.auth.dto.request.*;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
@@ -26,12 +32,18 @@ import org.wemightmove.movemap.global.security.CustomUserDetails;
 import org.wemightmove.movemap.global.util.RedisService;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService{
+
+    @Value("${mail.username}")
+    private String fromMail;
+    @Value("${mail.templates.img.logo}")
+    private String logoPath;
 
     private final RedisService redisService;
     private final JwtTokenProvider jwtTokenProvider;
@@ -40,6 +52,8 @@ public class AuthServiceImpl implements AuthService{
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final RegionTypeRepository regionTypeRepository;
+    private final JavaMailSender javaMailSender;
+    private final SpringTemplateEngine templateEngine;
 
 
     @Override
@@ -159,6 +173,44 @@ public class AuthServiceImpl implements AuthService{
         memberRepository.save(member);
     }
 
+    @Override
+    public void sendVerificationMail(SendVerificationMailRequest request) {
+        String toMail = request.email();
+
+        String uuid = UUID.randomUUID().toString().replaceAll("-", "");
+
+        String title = "[MoveMap] 이메일 인증 코드 전송"; //이메일 제목
+
+        HashMap<String,Object> map = new HashMap<>();
+        map.put("code", uuid);
+
+        Context context = new Context();
+        context.setVariables(map); //템플릿에 전달할 데이터
+        String content = templateEngine.process("verification.html", context);
+
+        redisService.setValuesWithTimeout("verification_code:"+toMail, uuid, Duration.ofMinutes(10));
+
+        sendEmail(toMail,title,content);
+    }
+
+    @Override
+    public void verifyCode(VerifyRequest request) {
+        String code = request.code();
+        String key = "verification_code:" + request.email();
+
+        Object value = redisService.getValues(key);
+
+        if (value == null) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        if (!value.toString().equals(code)) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        redisService.deleteValues(key);
+    }
+
     private String createUuid() {
         String uuid = UUID.randomUUID().toString().replace("-","");
         while(memberRepository.existsByUuid(uuid)) {
@@ -170,6 +222,22 @@ public class AuthServiceImpl implements AuthService{
     private String getRegionCode(String sido, String sigungu) {
         return regionTypeRepository.findRegionByNameAndParentName(sigungu, sido)
                 .orElseThrow(() -> new CustomException(ErrorCode.BAD_REQUEST)).getPrefix();
+    }
+
+    private void sendEmail(String toMail, String title, String content){
+        try{
+            MimeMessage mailMessage = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mailMessage, true, "UTF-8");
+            helper.setFrom(fromMail);
+            helper.setTo(toMail);
+            helper.setSubject(title);
+            helper.setText(content, true);
+            helper.addInline("logo", new ClassPathResource(logoPath));
+
+            javaMailSender.send(mailMessage);
+        } catch (MessagingException e){
+            throw new CustomException(ErrorCode.SERVER_ERROR);
+        }
     }
 
 
