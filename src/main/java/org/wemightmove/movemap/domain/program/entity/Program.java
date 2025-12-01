@@ -30,6 +30,9 @@ public class Program {
     @Column(name = "facility_subtype", length = 200)
     private String facilitySubtype;
 
+    @Column(name = "facility_name", length = 200, nullable = false)
+    private String facilityName;
+
     @Column(name = "name", length = 200, nullable = false)
     private String name;
 

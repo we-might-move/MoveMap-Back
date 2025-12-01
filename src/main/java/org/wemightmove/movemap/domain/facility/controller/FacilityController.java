@@ -139,7 +139,7 @@ public class FacilityController {
     /**
      * FIXME : 강남 축구 -> 이런 식으로 검색해도 잘 나오도록 개선하기
      */
-    @GetMapping("/facilities/search")
+    @GetMapping("/search")
     @Operation(
             summary = "시설 검색",
             description = "시설 검색만 진행합니다. 시설 리뷰를 쓸 때 시설을 찾는 용도로 사용됩니다."
