@@ -4,17 +4,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
-import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
-import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
-import org.wemightmove.movemap.domain.program.dto.request.ProgramSearchByKeywordRequest;
+import org.wemightmove.movemap.domain.program.dto.request.*;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramReviewResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
 import org.wemightmove.movemap.domain.program.service.ProgramQueryService;
+import org.wemightmove.movemap.domain.program.service.ProgramReviewCommandService;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
@@ -28,6 +28,7 @@ import java.util.List;
 public class ProgramController {
 
     private final ProgramQueryService programQueryService;
+    private final ProgramReviewCommandService programReviewCommandService;
 
     @Operation(summary = "프로그램 마커 조회(초기)")
     @GetMapping("/markers/initial")
@@ -133,5 +134,22 @@ public class ProgramController {
         Long memberId = member.getId();
         ProgramSimpleListResponse response = programQueryService.searchPrograms(memberId, request);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "프로그램 리뷰를 저장합니다.")
+    @PostMapping("/{id}/reviews")
+    public ResponseEntity<ProgramReviewResponse> createReview(
+            @PathVariable("id") Long facilityId,
+            @AuthenticationPrincipal CustomUserDetails member,
+            @Valid @RequestBody SaveProgramReviewRequest request
+    ) {
+
+        Long memberId = member.getId();
+
+        ProgramReviewResponse response = programReviewCommandService.createReview(facilityId, memberId, request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 }

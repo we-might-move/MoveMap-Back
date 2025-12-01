@@ -2,6 +2,7 @@ package org.wemightmove.movemap.domain.program.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.domain.member.entity.Member;
@@ -33,4 +34,13 @@ public class ProgramReview {
 
     @Column(name = "content", columnDefinition = "text")
     private String content;
+
+    @Builder
+    public ProgramReview(Member member, Program program, int rating, String title, String content) {
+        this.member = member;
+        this.program = program;
+        this.rating = rating;
+        this.title = title;
+        this.content = content;
+    }
 }
