@@ -10,10 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.SendVerificationMailRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.SignupRequest;
+import org.wemightmove.movemap.domain.auth.dto.request.*;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.auth.dto.response.LoginResponse;
 import org.wemightmove.movemap.domain.auth.service.AuthService;
@@ -75,9 +72,16 @@ public class AuthController {
     }
 
     @Operation(summary = "이메일 인증 코드 전송", description = "이메일 인증 코드를 전송합니다.")
-    @PostMapping("/email")
+    @PostMapping("/email/send")
     public ResponseEntity<Void> sendVerificationMail(@RequestBody @Valid SendVerificationMailRequest request) {
         authService.sendVerificationMail(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "이메일 인증 코드 확인", description = "사용자가 입력한 이메일 인증 코드가 올바른지 확인합니다.")
+    @PostMapping("/email/verify")
+    public ResponseEntity<Void> verify(@RequestBody @Valid VerifyRequest request) {
+        authService.verifyCode(request);
         return ResponseEntity.ok().build();
     }
 

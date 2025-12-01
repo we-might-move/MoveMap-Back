@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
-import org.wemightmove.movemap.domain.auth.dto.request.KakaoLoginRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.LoginRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.SendVerificationMailRequest;
-import org.wemightmove.movemap.domain.auth.dto.request.SignupRequest;
+import org.wemightmove.movemap.domain.auth.dto.request.*;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
@@ -191,13 +188,27 @@ public class AuthServiceImpl implements AuthService{
         context.setVariables(map); //템플릿에 전달할 데이터
         String content = templateEngine.process("verification.html", context);
 
-        //Redis 에 (UUID,Email) 쌍 저장
-        if(!redisService.setValuesWithTimeoutIfAbsent("verification_code:"+uuid, toMail, Duration.ofMinutes(10))){
-            throw new CustomException(ErrorCode.SERVER_ERROR);
+        redisService.setValuesWithTimeout("verification_code:"+toMail, uuid, Duration.ofMinutes(10));
+
+        sendEmail(toMail,title,content);
+    }
+
+    @Override
+    public void verifyCode(VerifyRequest request) {
+        String code = request.code();
+        String key = "verification_code:" + request.email();
+
+        Object value = redisService.getValues(key);
+
+        if (value == null) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
         }
 
-        //메일 전송
-        sendEmail(toMail,title,content);
+        if (!value.toString().equals(code)) {
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        redisService.deleteValues(key);
     }
 
     private String createUuid() {
