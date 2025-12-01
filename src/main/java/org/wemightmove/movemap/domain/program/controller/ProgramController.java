@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramSearchByKeywordRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
 import org.wemightmove.movemap.domain.program.service.ProgramQueryService;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
@@ -106,6 +108,30 @@ public class ProgramController {
                 memberId, request, facilityTypes, weekDayTypes
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "프로그램 키워드 검색",
+            description = """
+            프로그램명 또는 시설명으로 키워드 검색합니다.
+            - 공백을 무시하고 검색: "강남 체육관" = "강남체육관"
+            - 프로그램명과 시설명 모두에서 검색
+            - 커서 기반 페이지네이션 지원
+            
+            예시:
+            - "강남 축구" → 강남 지역의 축구 프로그램 검색
+            - "수영장" → 수영장이 있는 시설의 프로그램 검색
+            """
+    )
+    @GetMapping("/search")
+    public ResponseEntity<ProgramSimpleListResponse> searchPrograms(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @Valid @ModelAttribute ProgramSearchByKeywordRequest request
+    ) {
+
+        Long memberId = member.getId();
+        ProgramSimpleListResponse response = programQueryService.searchPrograms(memberId, request);
         return ResponseEntity.ok(response);
     }
 }

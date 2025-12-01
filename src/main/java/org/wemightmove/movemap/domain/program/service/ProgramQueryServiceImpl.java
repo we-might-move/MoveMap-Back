@@ -2,13 +2,16 @@ package org.wemightmove.movemap.domain.program.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramSearchByKeywordRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
 import org.wemightmove.movemap.domain.program.repository.ProgramRepository;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.enums.FacilityType;
@@ -21,6 +24,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ProgramQueryServiceImpl implements ProgramQueryService {
 
     private static final int DEFAULT_MAX_MARKERS = 10;
@@ -109,6 +113,32 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
         Long nextCursor = hasNext && !programs.isEmpty() ? programs.get(programs.size() - 1).id() : null;
 
         return ProgramListResponse.of(programs, nextCursor, hasNext);
+    }
+
+    @Override
+//    @Transactional(timeout = 10)
+    public ProgramSimpleListResponse searchPrograms(Long memberId, ProgramSearchByKeywordRequest request) {
+
+        Member member = getMember(memberId);
+
+        String normalizedKeyword = request.normalizedKeyword();
+        int size = request.size();
+
+        // size + 1개를 조회하여 hasNext 판단
+        List<ProgramSimpleListResponse.ProgramSimpleItem> results =
+                programRepository.searchProgramsByKeyword(
+                        normalizedKeyword,
+                        request.cursor(),
+                        size + 1
+                );
+
+        // hasNext 판단 및 응답 생성
+        boolean hasNext = results.size() > size;
+        List<ProgramSimpleListResponse.ProgramSimpleItem> content = hasNext ?
+                results.subList(0, size) : results;
+        Long nextCursor = hasNext ? content.get(content.size() - 1).id() : null;
+
+        return ProgramSimpleListResponse.of(content, nextCursor, hasNext);
     }
 
     private String getRegionCode(String city, String district) {

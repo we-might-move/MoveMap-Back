@@ -9,6 +9,7 @@ import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchReq
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
+import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
 import org.wemightmove.movemap.global.enums.FacilityType;
 
 import java.math.BigDecimal;
@@ -471,6 +472,59 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 
         return results.stream()
                 .map(ProgramListResponse.ProgramItem::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProgramSimpleListResponse.ProgramSimpleItem> searchProgramsByKeyword(
+            String keyword,
+            Long cursor,
+            int size
+    ) {
+        StringBuilder sql = new StringBuilder();
+        Map<String, Object> params = new HashMap<>();
+
+        sql.append("""
+        SELECT 
+            p.id,
+            p.name as program_name,
+            p.facility_name as facility_name,
+            p.facility_subtype,
+            p.address
+        FROM program p
+        WHERE 1=1
+        """);
+
+        // 커서 기반 페이징
+        if (cursor != null) {
+            sql.append("AND p.id > :cursor ");
+            params.put("cursor", cursor);
+        }
+
+        // ✅ Prefix 검색 (B-Tree 인덱스 활용)
+        sql.append("""
+            AND (
+                p.name_normalized ILIKE :keyword
+                OR p.facility_name_normalized ILIKE :keyword
+            )
+            """);
+        params.put("keyword", keyword + "%");
+
+        // 정렬 및 제한
+        sql.append("""
+        ORDER BY p.id ASC
+        LIMIT :size
+        """);
+        params.put("size", size);
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        params.forEach(query::setParameter);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(ProgramSimpleListResponse.ProgramSimpleItem::mapToDTO)
                 .collect(Collectors.toList());
     }
 
