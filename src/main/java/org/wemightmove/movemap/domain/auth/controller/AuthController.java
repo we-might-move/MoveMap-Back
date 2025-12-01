@@ -59,7 +59,7 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(tokens.accessToken()));
     }
 
-    @Operation(summary = "카카오 로그인 인가 코드 전달", description = "카카오 로그인 인가 코드를 전달합니다. 가입된 회원이면 토큰을 발급해 응답하고, 미가입 회원이면 회원 가입 페이지로 리다이렉트시킵니다.")
+    @Operation(summary = "카카오 로그인 액세스 토큰 전달", description = "카카오 로그인 액세스 토큰을 전달합니다. 가입된 회원이면 무브맵 서비스의 JWT 토큰을 발급해 응답하고, 미가입 회원이면 kakaoID를 응답합니다.")
     @PostMapping("/kakao")
     public ResponseEntity<LoginResponse> kakaoCallback(@RequestBody KakaoLoginRequest request, HttpServletResponse response) {
         KakaoLoginResponse kakaoLoginResponse = authService.loginWithKakao(request);
