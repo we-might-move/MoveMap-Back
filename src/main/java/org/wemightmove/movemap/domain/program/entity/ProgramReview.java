@@ -28,6 +28,9 @@ public class ProgramReview {
     @Column(name = "rating", nullable = false)
     private int rating;
 
+    @Column(name = "title", length = 100, nullable = false)
+    private String title;
+
     @Column(name = "content", columnDefinition = "text")
     private String content;
 }
