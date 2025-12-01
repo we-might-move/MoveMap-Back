@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
@@ -80,6 +81,27 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
         // 다음 페이지 존재 여부 확인
         boolean hasNext = programs.size() > request.size();
         if(hasNext) {
+            programs = programs.subList(0, request.size());
+        }
+
+        // 다음 커서 계산
+        Long nextCursor = hasNext && !programs.isEmpty() ? programs.get(programs.size() - 1).id() : null;
+
+        return ProgramListResponse.of(programs, nextCursor, hasNext);
+    }
+
+    @Override
+    public ProgramListResponse getProgramsBySearch(Long memberId, ProgramListBySearchRequest request, List<FacilityType> facilityTypes, List<WeekDayType> weekDayTypes) {
+        String regionCode = getRegionCode(request.city(), request.district());
+
+        int fetchSize = request.size() + 1;
+
+        List<ProgramListResponse.ProgramItem> programs = programRepository.findProgramsByViewport(
+                memberId, request, regionCode, facilityTypes, WeekDayType.getWeekDayRange(weekDayTypes), fetchSize
+        );
+
+        boolean hasNext = programs.size() > request.size();
+        if (hasNext) {
             programs = programs.subList(0, request.size());
         }
 

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
@@ -82,6 +83,28 @@ public class ProgramController {
         Long memberId = member.getId();
 
         ProgramListResponse response = programQueryService.getPrograms(memberId, request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 2. 프로그램 리스트 조회 (뷰포트 + 필터링)
+     * GET /api/v1/programs/search?northEastLat=37.6&northEastLng=127.1&...
+     */
+    @GetMapping("/list")
+    @Operation(summary = "프로그램 리스트 조회 (필터링)",
+            description = "뷰포트 및 다양한 조건으로 프로그램 목록을 조회합니다. 커서 기반 페이징을 사용합니다.")
+    public ResponseEntity<ProgramListResponse> getProgramsByViewportAndFilters(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @Valid @ModelAttribute ProgramListBySearchRequest request,
+            @RequestParam(value = "facilityTypes", required = false) List<FacilityType> facilityTypes,
+            @RequestParam(value = "weekDayTypes", required = false) List<WeekDayType> weekDayTypes
+    ) {
+        Long memberId = member.getId();
+
+        ProgramListResponse response = programQueryService.getProgramsBySearch(
+                memberId, request, facilityTypes, weekDayTypes
+        );
 
         return ResponseEntity.ok(response);
     }

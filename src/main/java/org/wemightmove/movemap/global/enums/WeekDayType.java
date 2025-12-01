@@ -17,6 +17,6 @@ public enum WeekDayType {
     private final int num;
 
     public static List<Integer> getWeekDayRange(List<WeekDayType> weekDayTypeList) {
-        return weekDayTypeList.stream().map(w -> w.num).toList();
+        return weekDayTypeList == null ? null : weekDayTypeList.stream().map(w -> w.num).toList();
     }
 }
