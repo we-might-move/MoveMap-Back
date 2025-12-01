@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.domain.program.repository.ProgramRepository;
 import org.wemightmove.movemap.global.entity.RegionType;
+import org.wemightmove.movemap.global.enums.FacilityType;
+import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
@@ -31,11 +34,44 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
 
         List<ProgramMarkerResponse.MarkerInfo> markers = programRepository.findMakersByRegionCode(regionType.getCenterLatitude(), regionType.getCenterLongitude(), DEFAULT_MAX_MARKERS, memberId);
 
+        int totalPrograms = markers.stream()
+                .mapToInt(ProgramMarkerResponse.MarkerInfo::programCount)
+                .sum();
+
         return new ProgramMarkerResponse(
                 markers,
-                markers.size(),
+                totalPrograms,
                 false
         );
+    }
+
+    @Override
+    public ProgramMarkerResponse getMarkersBySearch(ProgramMarkerRequest request, List<FacilityType> facilityTypes, List<WeekDayType> weekDayTypes, Long memberId) {
+        // 지역 코드 조회 (city + district 기반)
+        String regionCode = getRegionCode(request.city(), request.district());
+
+        List<ProgramMarkerResponse.MarkerInfo> markers =
+                programRepository.findMarkersByViewport(
+                        request, regionCode, facilityTypes, WeekDayType.getWeekDayRange(weekDayTypes), memberId
+                );
+
+        int totalPrograms = markers.stream()
+                .mapToInt(ProgramMarkerResponse.MarkerInfo::programCount)
+                .sum();
+
+        return new ProgramMarkerResponse(
+                markers,
+                totalPrograms,
+                request.hasSearchConditions()
+        );
+    }
+
+    private String getRegionCode(String city, String district) {
+        if (city == null && district == null) return null;
+        else if(city == null) return regionTypeRepository.findRegionByName(district).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getPrefix();
+        else if(district == null) return regionTypeRepository.findRegionByName(city).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getPrefix();
+
+        return regionTypeRepository.findRegionByNameAndParentName(district, city).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR)).getPrefix();
     }
 
     private Member getMember(Long memberId) {

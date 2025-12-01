@@ -10,6 +10,7 @@ import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.domain.program.service.ProgramQueryService;
 import org.wemightmove.movemap.global.enums.FacilityType;
+import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 import java.util.List;
@@ -28,6 +29,39 @@ public class ProgramController {
             @AuthenticationPrincipal CustomUserDetails member
     ) {
         ProgramMarkerResponse response = programQueryService.getMarkers(member.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "뷰포트 프로그램 마커 조회 (검색 + 필터)",
+            description = """
+                    지도 영역(viewport) 내 프로그램을 필터링하여 마커로 반환합니다.
+                    
+                    필터 조건:
+                    - 키워드: 프로그램명 검색 (부분 일치)
+                    - 지역: 시/도 + 시/군/구
+                    - 시설 타입: BALL_GAME, MARTIAL_ARTS, FITNESS 등
+                    - 가격: 최소/최대 금액
+                    - 요일: 월 ~ 일
+                    - 연령: 최소/최대 나이
+                    
+                    정렬:
+                    - 필터 있음: 프로그램 수 많은 순
+                    - 필터 없음: 거리순 (viewport 중심 기준)
+                    
+                    성능:
+                    - Bounding Box 기반 공간 인덱스 활용
+                    - 응답 시간: ~20ms
+                    """
+    )
+    @GetMapping("/markers")
+    public ResponseEntity<ProgramMarkerResponse> getMarkers(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @ModelAttribute ProgramMarkerRequest request,
+            @RequestParam(value = "facilityTypes", required = false) List<FacilityType> facilityTypes,
+            @RequestParam(value = "weekDayTypes", required = false) List<WeekDayType> weekDayTypes
+    ) {
+        ProgramMarkerResponse response = programQueryService.getMarkersBySearch(request, facilityTypes, weekDayTypes, member.getId());
         return ResponseEntity.ok(response);
     }
 }
