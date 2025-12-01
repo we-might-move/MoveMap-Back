@@ -9,12 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.program.dto.request.*;
-import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
-import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
-import org.wemightmove.movemap.domain.program.dto.response.ProgramReviewResponse;
-import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
+import org.wemightmove.movemap.domain.program.dto.response.*;
 import org.wemightmove.movemap.domain.program.service.ProgramQueryService;
 import org.wemightmove.movemap.domain.program.service.ProgramReviewCommandService;
+import org.wemightmove.movemap.domain.program.service.ProgramReviewQueryService;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
@@ -29,6 +27,7 @@ public class ProgramController {
 
     private final ProgramQueryService programQueryService;
     private final ProgramReviewCommandService programReviewCommandService;
+    private final ProgramReviewQueryService programReviewQueryService;
 
     @Operation(summary = "프로그램 마커 조회(초기)")
     @GetMapping("/markers/initial")
@@ -151,5 +150,18 @@ public class ProgramController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @Operation(summary = "프로그램 리뷰 리스트를 검색합니다.")
+    @GetMapping("/reviews")
+    public ResponseEntity<ProgramReviewListResponse> getProgramReviews(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @Valid @ModelAttribute ProgramReviewRequest request
+    ) {
+
+        Long memberId = member.getId();
+        ProgramReviewListResponse result = programReviewQueryService.getProgramReviews(memberId, request);
+        
+        return ResponseEntity.ok(result);
     }
 }
