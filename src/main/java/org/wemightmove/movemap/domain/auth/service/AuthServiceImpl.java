@@ -19,6 +19,7 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.wemightmove.movemap.domain.auth.dto.request.*;
 import org.wemightmove.movemap.domain.auth.dto.response.KakaoLoginResponse;
+import org.wemightmove.movemap.domain.auth.dto.response.LoginResponse;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.global.client.KakaoClient;
@@ -27,7 +28,6 @@ import org.wemightmove.movemap.global.enums.SignupType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.jwt.JwtTokenProvider;
-import org.wemightmove.movemap.global.jwt.TokenDto;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 import org.wemightmove.movemap.global.util.RedisService;
@@ -68,7 +68,7 @@ public class AuthServiceImpl implements AuthService{
     }
 
     @Override
-    public TokenDto login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -80,14 +80,14 @@ public class AuthServiceImpl implements AuthService{
             String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
 
             redisService.setValuesWithTimeout("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId(), refreshToken, Duration.ofMillis(jwtTokenProvider.getRefreshTokenValidity()));
-            return new TokenDto(accessToken, refreshToken);
+            return new LoginResponse(accessToken, refreshToken);
         } catch(BadCredentialsException e) {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
     }
 
     @Override
-    public TokenDto reissue(String accessToken, String refreshToken) {
+    public LoginResponse reissue(String accessToken, String refreshToken) {
 
         if(!jwtTokenProvider.validateToken(refreshToken)) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
@@ -105,7 +105,7 @@ public class AuthServiceImpl implements AuthService{
 
         redisService.setValuesWithTimeout("refreshToken:" + ((CustomUserDetails) authentication.getPrincipal()).getId(), newRefreshToken, Duration.ofMillis(jwtTokenProvider.getRefreshTokenValidity()));
 
-        return new TokenDto(newAccessToken, newRefreshToken);
+        return new LoginResponse(newAccessToken, newRefreshToken);
     }
 
     @Override
