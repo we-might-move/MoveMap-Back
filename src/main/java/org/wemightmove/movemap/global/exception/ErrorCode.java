@@ -66,6 +66,8 @@ public enum ErrorCode {
     ALREADY_DELETED_BOOKMARK(400, 3018, "이미 삭제한 북마크입니다"),
     ALREADY_ADDED_FACILITY_REVIEW(400, 3018, "이미 리뷰를 작성한 시설입니다."),
 
+    CHILD_NOT_FOUND(404, 3019, "등록된 자식을 찾을 수 없습니다."),
+
     /*
      * Redis 관련 오류
      * (4000 ~ 4999)

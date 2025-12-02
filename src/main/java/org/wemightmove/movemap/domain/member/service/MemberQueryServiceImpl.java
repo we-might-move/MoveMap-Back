@@ -4,16 +4,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.member.dto.response.*;
 import org.wemightmove.movemap.domain.member.entity.Member;
+import org.wemightmove.movemap.domain.member.entity.MemberScore;
+import org.wemightmove.movemap.domain.member.entity.ParentChild;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.domain.member.repository.MemberScoreRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
+import org.wemightmove.movemap.global.enums.RoleType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.security.CustomUserDetails;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -26,6 +34,7 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private final MemberRepository memberRepository;
     private final ParentChildRepository parentChildRepository;
     private final RegionTypeRepository regionTypeRepository;
+    private final MemberScoreRepository memberScoreRepository;
 
     private static final String INVITE_PREFIX = "invite:";
     private static final String SENT_LIST_PREFIX = "invites:sent:";
@@ -128,12 +137,70 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         return MemberInfoResponse.from(member, city, district);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public MemberScoreResponse getMemberScore(LocalDate date) {
+        Member member = getCurrentMember();
+
+        if(member.getRole().equals(RoleType.STUDENT)) {
+            MemberScore memberScore = memberScoreRepository.findByMemberAndDate(member, date)
+                    .orElse(null);
+
+            if(memberScore == null) {
+                return MemberScoreResponse.builder()
+                        .score(0)
+                        .build();
+            }
+
+            return MemberScoreResponse.builder()
+                    .score(memberScore.getTotalScore())
+                    .build();
+        }
+
+        if(member.getRole().equals(RoleType.PARENT)) {
+            List<ParentChild> parentChildList = parentChildRepository.findAllByParent(member);
+            if(parentChildList.isEmpty()) { // 연결된 학생이 없을 경우 예외 처리
+                throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
+            }
+            Member child = parentChildList.get(0).getChild();
+            MemberScore childScore = memberScoreRepository.findByMemberAndDate(child, date)
+                    .orElse(null);
+
+            if(childScore == null) {
+                return MemberScoreResponse.builder()
+                        .percent(100.0)
+                        .build();
+            }
+
+            List<MemberScore> peerScores = memberScoreRepository.findAllByDate(date);
+
+            int totalPeers = peerScores.size();
+            int lowerThanChild = (int) peerScores.stream()
+                    .filter(score -> score.getTotalScore() < childScore.getTotalScore())
+                    .count();
+
+            double percentile = (double) lowerThanChild / totalPeers * 100.0;
+
+            return MemberScoreResponse.builder()
+                    .percent(percentile)
+                    .build();
+        }
+
+        throw new CustomException(ErrorCode.SERVER_ERROR);
+    }
+
     private String buildInviteKey(Long parentId, Long childId) {
         return INVITE_PREFIX + parentId + ":" + childId;
     }
 
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    private Member getCurrentMember() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return memberRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     private String getCityNameByRegionCode(String regionCode) {

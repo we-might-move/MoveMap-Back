@@ -3,6 +3,7 @@ package org.wemightmove.movemap.domain.member.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import org.wemightmove.movemap.domain.member.service.MemberQueryService;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
@@ -123,5 +125,11 @@ public class MemberController {
     public ResponseEntity<MemberInfoResponse> getMemberInfo(
             @AuthenticationPrincipal CustomUserDetails member) {
         return ResponseEntity.ok(memberQueryService.getMemberInfo(member.getId()));
+    }
+
+    @Operation(summary = "개인 점수 조회", description = "사용자의 운동 기록을 기반으로 계산한 점수를 조회합니다.")
+    @GetMapping("/score")
+    public ResponseEntity<MemberScoreResponse> getMemberScore(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        return ResponseEntity.ok(memberQueryService.getMemberScore(date));
     }
 }

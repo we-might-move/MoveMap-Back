@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface MemberScoreRepository extends JpaRepository<MemberScore, Long> {
     Optional<MemberScore> findByMemberAndDate(Member member, LocalDate date);
+    List<MemberScore> findAllByDate(LocalDate date);
 
     List<MemberScore> findByMemberAndDateBetween(Member member, LocalDate startDate, LocalDate endDate);
 }
