@@ -2,7 +2,6 @@ package org.wemightmove.movemap.domain.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -17,7 +16,6 @@ import org.wemightmove.movemap.domain.auth.service.AuthService;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.jwt.JwtTokenProvider;
-import org.wemightmove.movemap.global.jwt.TokenDto;
 
 @RestController
 @Tag(name = "Auth")
@@ -37,10 +35,8 @@ public class AuthController {
 
     @Operation(summary = "자체 로그인", description = "서비스 자체 로그인")
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response){
-        TokenDto tokens = authService.login(request);
-        addCookie(response, "refreshToken", tokens.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
-        return ResponseEntity.ok(new LoginResponse(tokens.accessToken()));
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request){
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @Operation(summary = "로그아웃", description = "로그아웃을 진행합니다.")
@@ -51,12 +47,10 @@ public class AuthController {
 
     @Operation(summary = "토큰 재발급", description = "액세스 토큰 만료 시 리프레시 토큰을 이용해 액세스 토큰과 리프레시 토큰을 재발급합니다.")
     @PostMapping("/token")
-    public ResponseEntity<LoginResponse> reissue(HttpServletRequest request, HttpServletResponse response){
+    public ResponseEntity<LoginResponse> reissue(HttpServletRequest request, @RequestBody @Valid ReissueTokenRequest reissueTokenRequest){
         String accessToken = getAccessToken(request);
-        String refreshToken = getCookie(request, "refreshToken");
-        TokenDto tokens = authService.reissue(accessToken, refreshToken);
-        addCookie(response, "refreshToken", tokens.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
-        return ResponseEntity.ok(new LoginResponse(tokens.accessToken()));
+        String refreshToken = reissueTokenRequest.refreshToken();
+        return ResponseEntity.ok(authService.reissue(accessToken, refreshToken));
     }
 
     @Operation(summary = "카카오 로그인 액세스 토큰 전달", description = "카카오 로그인 액세스 토큰을 전달합니다. 가입된 회원이면 무브맵 서비스의 JWT 토큰을 발급해 응답하고, 미가입 회원이면 kakaoID를 응답합니다.")
@@ -66,8 +60,7 @@ public class AuthController {
         if(kakaoLoginResponse.isNewMember()) {
             return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.kakaoId(), kakaoLoginResponse.isNewMember()));
         } else {
-            addCookie(response, "refreshToken", kakaoLoginResponse.refreshToken(), (int) jwtTokenProvider.getRefreshTokenValidity() / 1000);
-            return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.accessToken(), kakaoLoginResponse.isNewMember()));
+            return ResponseEntity.ok(new LoginResponse(kakaoLoginResponse.accessToken(), kakaoLoginResponse.refreshToken(), kakaoLoginResponse.isNewMember()));
         }
     }
 
@@ -85,23 +78,17 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "비밀번호 재설정", description = "비밀번호를 변경합니다.")
+    @PatchMapping("/password")
+    public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "토큰 인증 테스트", description = "토큰 인증 테스트용 API입니다. 추후 삭제 예정입니다.")
     @GetMapping
     public ResponseEntity<String> test() {
         return ResponseEntity.ok(SecurityContextHolder.getContext().getAuthentication().getName());
-    }
-
-    private String getCookie(HttpServletRequest request, String name) {
-        Cookie[] cookies = request.getCookies();
-        if(cookies == null) {
-            throw new CustomException(ErrorCode.NO_COOKIE);
-        }
-        for(Cookie cookie : cookies) {
-            if(cookie.getName().equals(name)) {
-                return cookie.getValue();
-            }
-        }
-        throw new CustomException(ErrorCode.NO_COOKIE);
     }
 
     private String getAccessToken(HttpServletRequest request) {
@@ -110,17 +97,5 @@ public class AuthController {
             throw new CustomException(ErrorCode.UNAUTHORIZED);
         }
         return bearerToken.substring(7);
-    }
-
-    private void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(maxAge);
-        cookie.setAttribute("SameSite", "None");
-
-        response.addCookie(cookie);
     }
 }

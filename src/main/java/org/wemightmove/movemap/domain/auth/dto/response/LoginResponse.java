@@ -6,20 +6,22 @@ public record LoginResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL)
         String accessToken,
         @JsonInclude(JsonInclude.Include.NON_NULL)
+        String refreshToken,
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         Long kakaoId,
         @JsonInclude(JsonInclude.Include.NON_NULL)
         Boolean isNewMember
         ) {
 
-        public LoginResponse(String accessToken) {
-                this(accessToken, null, null);
+        public LoginResponse(String accessToken, String refreshToken) {
+                this(accessToken, refreshToken, null, null);
         }
 
-        public LoginResponse(String accessToken, Boolean isNewMember) {
-                this(accessToken, null, isNewMember);
+        public LoginResponse(String accessToken, String refreshToken, Boolean isNewMember) {
+                this(accessToken, refreshToken, null, isNewMember);
         }
 
         public LoginResponse(Long kakaoId, Boolean isNewMember) {
-                this(null, kakaoId, isNewMember);
+                this(null, null, kakaoId, isNewMember);
         }
 }
