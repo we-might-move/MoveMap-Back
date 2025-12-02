@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -211,6 +212,24 @@ public class AuthServiceImpl implements AuthService{
         redisService.deleteValues(key);
     }
 
+    @Override
+    @Transactional
+    public void changePassword(ChangePasswordRequest request) {
+        Member member = getCurrentMember();
+        if(!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
+            System.out.println("1");
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        if(!request.newPassword().equals(request.confirmPassword())) {
+            System.out.println("2");
+            throw new CustomException(ErrorCode.BAD_REQUEST);
+        }
+
+        member.changePassword(passwordEncoder.encode(request.newPassword()));
+        memberRepository.save(member);
+    }
+
     private String createUuid() {
         String uuid = UUID.randomUUID().toString().replace("-","");
         while(memberRepository.existsByUuid(uuid)) {
@@ -240,5 +259,10 @@ public class AuthServiceImpl implements AuthService{
         }
     }
 
+    private Member getCurrentMember() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return memberRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    }
 
 }

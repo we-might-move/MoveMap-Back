@@ -85,6 +85,13 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "비밀번호 재설정", description = "비밀번호를 변경합니다.")
+    @PatchMapping("/password")
+    public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "토큰 인증 테스트", description = "토큰 인증 테스트용 API입니다. 추후 삭제 예정입니다.")
     @GetMapping
     public ResponseEntity<String> test() {

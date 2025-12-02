@@ -77,6 +77,9 @@ public class Member extends BaseTimeEntity {
         this.sex = sex;
     }
 
+    public void changePassword(String password) {
+        this.password = password;
+    }
 
     public void withdraw() {
         this.isDeleted = true;
