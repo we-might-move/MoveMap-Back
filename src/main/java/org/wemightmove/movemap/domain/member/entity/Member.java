@@ -2,6 +2,7 @@ package org.wemightmove.movemap.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.wemightmove.movemap.global.entity.BaseTimeEntity;
@@ -22,10 +23,10 @@ public class Member extends BaseTimeEntity {
     @Column(name = "kakao_id", unique = true)
     private Long kakaoId;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -59,6 +60,26 @@ public class Member extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "sex", nullable = false)
     private SexType sex;
+
+    @Builder
+    public Member(RoleType role, String email, String password, String nickname, String regionCode, String uuid, double height, double weight, boolean isDeleted, int age, SexType sex, Long kakaoId) {
+        this.role = role;
+        this.email = email;
+        this.password = password;
+        this.kakaoId = kakaoId;
+        this.nickname = nickname;
+        this.regionCode = regionCode;
+        this.uuid = uuid;
+        this.height = height;
+        this.weight = weight;
+        this.isDeleted = isDeleted;
+        this.age = age;
+        this.sex = sex;
+    }
+
+    public void changePassword(String password) {
+        this.password = password;
+    }
 
     public void withdraw() {
         this.isDeleted = true;

@@ -149,7 +149,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
     @Override
     @Transactional
-    public void rejectInvte(Long childId, RejectInvitationRequest rejectInvitationRequest) {
+    public void rejectInvite(Long childId, RejectInvitationRequest rejectInvitationRequest) {
         Long parentId = rejectInvitationRequest.parentId();
 
         // Redis에서 초대 정보 존재 확인
@@ -236,7 +236,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
         // 4. 지역 코드로 변경
         if (updateMemberRequest.city() != null && updateMemberRequest.district() != null) {
-            RegionType regionType = regionTypeRepository.findRegionByNameAndParentName(updateMemberRequest.city(), updateMemberRequest.district())
+            RegionType regionType = regionTypeRepository.findRegionByNameAndParentName(updateMemberRequest.district(), updateMemberRequest.city())
                     .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR));
 
             regionCode = regionType.getPrefix();

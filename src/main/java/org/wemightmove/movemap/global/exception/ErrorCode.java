@@ -21,6 +21,8 @@ public enum ErrorCode {
     FILE_COMPARISON_FAIL(500, 1503, "파일 비교에 실패했습니다."),
     ALREADY_PROCESSED(409, 1600, "이미 처리된 요청입니다."),
     EXTERNAL_API_ERROR(500, 1900, "외부 API 호출 중 오류가 발생했습니다."),
+    SERVER_ERROR(500, 1999, "요청 처리 중 오류가 발생했습니다."),
+
 
     /*
      * 인증/인가 관련 오류
@@ -37,7 +39,7 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND(404, 4000, "리소스를 찾을 수 없습니다."),
 
     /*
-     * 리소스 관련 오류 (Member, Notification)
+     * 리소스 관련 오류 (Member, Notification, Facility)
      * (3000 ~ 3999)
      */
     MEMBER_NOT_FOUND(404, 3000, "사용자를 찾을 수 없습니다."),
@@ -58,6 +60,13 @@ public enum ErrorCode {
     INVALID_AGE(400, 3014, "유효하지 않은 나이입니다"),
     INVALID_HEIGHT(400, 3015, "유효하지 않은 키 값입니다"),
     INVALID_WEIGHT(400, 3016, "유효하지 않은 몸무게 값입니다"),
+
+    FACILITY_NOT_FOUND(404, 3017, "시설을 찾을 수 없습니다."),
+    ALREADY_ADDED_BOOKMARK(400, 3018, "이미 등록한 북마크입니다."),
+    ALREADY_DELETED_BOOKMARK(400, 3018, "이미 삭제한 북마크입니다"),
+    ALREADY_ADDED_FACILITY_REVIEW(400, 3018, "이미 리뷰를 작성한 시설입니다."),
+
+    CHILD_NOT_FOUND(404, 3019, "등록된 자식을 찾을 수 없습니다."),
 
     /*
      * Redis 관련 오류

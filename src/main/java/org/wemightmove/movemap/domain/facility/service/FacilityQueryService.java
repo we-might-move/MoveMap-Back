@@ -1,0 +1,21 @@
+package org.wemightmove.movemap.domain.facility.service;
+
+import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
+import org.wemightmove.movemap.domain.facility.dto.request.FacilitySearchListRequest;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
+import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
+import org.wemightmove.movemap.global.enums.FacilityType;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface FacilityQueryService {
+    FacilityMarkerResponse getMarkers(Long memberId);
+    FacilityMarkerResponse searchMarkers(Long memberId, FacilityMarkerRequest request, List<FacilityType> facilityTypes);
+    FacilityListResponse getFacilityList(Long memberId, FacilityInitialListRequest request);
+    FacilityListResponse searchFacilityList(Long memberId, FacilitySearchListRequest request, List<FacilityType> facilityTypes);
+    FacilitySimpleListResponse searchFacilityListByKeyword(Long memberId, String keyword);
+    FacilityListResponse.FacilityInfo getFacilityInfo(Long memberId, Long facilityId, BigDecimal lat, BigDecimal lng);
+}

@@ -24,4 +24,13 @@ public class MemberFacility {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
+
+    public static MemberFacility from(Member member, Facility facility) {
+        return new MemberFacility(member, facility);
+    }
+
+    private MemberFacility(Member member, Facility facility) {
+        this.member = member;
+        this.facility = facility;
+    }
 }
