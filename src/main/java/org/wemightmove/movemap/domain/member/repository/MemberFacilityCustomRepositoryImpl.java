@@ -65,6 +65,50 @@ public class MemberFacilityCustomRepositoryImpl implements MemberFacilityCustomR
                 .toList();
     }
 
+    @Override
+    public List<FavoriteFacilityResponse> findFavoriteFacility(Long memberId, Long cursor, int size) {
+
+        String sql = """
+            SELECT 
+                mf.id,
+                f.id,
+                f.name,
+                f.facility_subtype,
+                f.latitude,
+                f.longitude,
+                f.address,
+                COALESCE(AVG(fr.rating), 0.0) as average_rating,
+                CAST(COUNT(fr.id) AS bigint) as review_count,
+                NULL as distance
+            FROM member_facility mf
+            INNER JOIN facility f ON mf.facility_id = f.id
+            LEFT JOIN facility_review fr ON fr.facility_id = f.id
+            WHERE mf.member_id = :memberId 
+              AND (CAST(:cursor AS bigint) IS NULL OR mf.id < CAST(:cursor AS bigint))
+            GROUP BY 
+                mf.id,
+                f.id,
+                f.name,
+                f.facility_subtype,
+                f.latitude,
+                f.longitude,
+                f.address,
+                f.location
+            ORDER BY mf.id DESC
+            LIMIT :size
+            """;
+
+        List<Object[]> results = entityManager.createNativeQuery(sql)
+                .setParameter("memberId", memberId)
+                .setParameter("cursor", cursor)
+                .setParameter("size", size)
+                .getResultList();
+
+        return results.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     private FavoriteFacilityResponse mapToResponse(Object[] row) {
         return new FavoriteFacilityResponse(
                 ((Number) row[0]).longValue(),      // memberFacilityId
@@ -76,7 +120,7 @@ public class MemberFacilityCustomRepositoryImpl implements MemberFacilityCustomR
                 (String) row[6],                    // address
                 ((Number) row[7]).doubleValue(),    // averageRating
                 ((Number) row[8]).longValue(),      // reviewCount
-                ((Number) row[9]).doubleValue()     // distance (meters)
+                row[9] != null ? ((Number) row[9]).doubleValue() : null // distance (meters)
         );
     }
 
