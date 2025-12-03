@@ -102,8 +102,9 @@ public class FacilityReviewServiceImpl implements FacilityReviewService {
                 row[6] != null ? ((Number) row[6]).doubleValue() : null, // distance
                 ((Number) row[7]).longValue(),           // reviewId
                 ((Number) row[8]).intValue(),            // rating
-                (String) row[9],                         // reviewContent
-                (String) row[10]                         // reviewerNickname
+                (String) row[9],                         // reviewTitle
+                (String) row[10],                         // reviewContent
+                (String) row[11]                         // reviewerNickname
         );
     }
 

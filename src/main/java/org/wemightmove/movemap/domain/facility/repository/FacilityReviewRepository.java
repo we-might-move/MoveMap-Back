@@ -32,6 +32,7 @@ public interface FacilityReviewRepository extends JpaRepository<FacilityReview, 
             ) as distance,
             fr.id as reviewId,
             fr.rating as rating,
+            fr.title as reviewTitle,
             fr.content as reviewContent,
             m.nickname as reviewerNickname
         FROM facility_review fr
@@ -71,6 +72,7 @@ public interface FacilityReviewRepository extends JpaRepository<FacilityReview, 
             NULL as distance,
             fr.id as reviewId,
             fr.rating as rating,
+            fr.title as reviewTitle,
             fr.content as reviewContent,
             m.nickname as reviewerNickname
         FROM facility_review fr
