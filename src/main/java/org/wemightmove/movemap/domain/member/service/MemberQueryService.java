@@ -1,9 +1,6 @@
 package org.wemightmove.movemap.domain.member.service;
 
-import org.wemightmove.movemap.domain.member.dto.response.MemberInfoResponse;
-import org.wemightmove.movemap.domain.member.dto.response.MemberScoreResponse;
-import org.wemightmove.movemap.domain.member.dto.response.ReceivedInviteResponse;
-import org.wemightmove.movemap.domain.member.dto.response.SentInviteResponse;
+import org.wemightmove.movemap.domain.member.dto.response.*;
 
 import java.time.LocalDate;
 
@@ -16,4 +13,6 @@ public interface MemberQueryService {
     MemberInfoResponse getMemberInfo(Long memberId);
 
     MemberScoreResponse getMemberScore(LocalDate date);
+
+    ChildListResponse getChildList();
 }
