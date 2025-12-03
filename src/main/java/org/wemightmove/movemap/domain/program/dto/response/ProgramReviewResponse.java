@@ -11,6 +11,8 @@ public record ProgramReviewResponse(
         Long memberId,
         String memberNickname,
         Long programId,
+        String programName,
+        String facilityName,
         int rating,
         String title,
         String content
@@ -21,6 +23,8 @@ public record ProgramReviewResponse(
                 review.getMember().getId(),
                 review.getMember().getNickname(),
                 review.getProgram().getId(),
+                review.getProgram().getName(),
+                review.getProgram().getFacilityName(),
                 review.getRating(),
                 review.getTitle(),
                 review.getContent()
@@ -33,6 +37,8 @@ public record ProgramReviewResponse(
                 review.getMemberId(),
                 review.getMemberNickname(),
                 review.getProgramId(),
+                review.getProgramName(),
+                review.getFacilityName(),
                 review.getRating(),
                 review.getTitle(),
                 review.getContent()
