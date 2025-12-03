@@ -12,5 +12,8 @@ public interface WeeklyRegionScoreRepository extends CrudRepository<WeeklyRegion
     Optional<WeeklyRegionScore> findByRegionAndYearAndWeekNumber(RegionType region, int year, int weekNumber);
 
     List<WeeklyRegionScore> findByYearAndWeekNumberOrderByScoreDesc(int year, int weekNumber);
+    Optional<WeeklyRegionScore> findByRegionAndYearAndMonthAndWeekNumber(
+            RegionType region, int year, int month, int weekNumber);
 
+    List<WeeklyRegionScore> findByYearAndMonthAndWeekNumber(int year, int month, int weekNumber);
 }

@@ -12,6 +12,7 @@ import org.wemightmove.movemap.domain.member.event.MemberScoreUpdatedEvent;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
@@ -33,11 +34,11 @@ public class WeeklyRegionScoreUpdater {
 
         WeekFields weekFields = WeekFields.of(Locale.KOREA);
         int year = date.getYear();
-        int weekNumber = date.get(weekFields.weekOfWeekBasedYear());
         int month = date.getMonthValue();
+        int weekNumber = date.get(WeekFields.of(DayOfWeek.MONDAY, 4).weekOfMonth());
 
         // 해당 주의 시작(월요일)과 끝(일요일) 계산
-        LocalDate startOfWeek = date.with(weekFields.dayOfWeek(), 1);
+        LocalDate startOfWeek = date.with(WeekFields.of(DayOfWeek.MONDAY, 4).dayOfWeek(), 1);
         LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         // 1. 해당 주간의 점수 합산 (DailyRegionScore 합)

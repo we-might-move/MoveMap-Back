@@ -7,7 +7,5 @@ public record LeagueRankUnitResponse(
         Long regionId,
         String regionName,
         int weeklyScore,
-        String leagueType,
-        String leagueColorCode,
         int rank
 ) {}

@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface LeagueStatusRepository extends JpaRepository<LeagueStatus, Long> {
     Optional<LeagueStatus> findByRegion(RegionType region);
+    Optional<LeagueStatus> findByRegion_Id(Long regionId);
 }

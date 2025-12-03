@@ -10,7 +10,9 @@ import org.wemightmove.movemap.domain.league.entity.WeeklyRegionScore;
 import org.wemightmove.movemap.domain.league.repository.LeagueStatusRepository;
 import org.wemightmove.movemap.domain.league.repository.WeeklyRegionScoreRepository;
 import org.wemightmove.movemap.global.entity.RegionType;
+import org.wemightmove.movemap.global.enums.LeagueType;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.WeekFields;
 import java.util.*;
@@ -28,64 +30,92 @@ public class LeagueServiceImpl implements LeagueService {
     public LeagueRankResponse getCurrentWeekRanking() {
 
         LocalDate today = LocalDate.now();
-        WeekFields weekFields = WeekFields.of(Locale.KOREA);
+
         int year = today.getYear();
-        int weekNumber = today.get(weekFields.weekOfWeekBasedYear());
+        int month = today.getMonthValue();
+        int weekNumber = today.get(WeekFields.of(DayOfWeek.MONDAY, 4).weekOfMonth());
 
-        // 1. 이번 주에 점수가 존재하는 자치구들의 점수 맵 (regionId -> score)
+        // regionId → score (없으면 0)
         List<WeeklyRegionScore> weeklyScores =
-                weeklyRegionScoreRepository.findByYearAndWeekNumberOrderByScoreDesc(year, weekNumber);
+                weeklyRegionScoreRepository.findByYearAndMonthAndWeekNumber(year, month, weekNumber);
 
-        Map<Long, Integer> scoreByRegionId = weeklyScores.stream()
+        Map<Long, Integer> scores = weeklyScores.stream()
                 .collect(Collectors.toMap(
-                        ws -> ws.getRegion().getId(),
+                        w -> w.getRegion().getId(),
                         WeeklyRegionScore::getScore
                 ));
 
-        // 2. 기준은 LeagueStatus: 리그에 속한 모든 자치구를 대상으로 순위 생성
+        // 모든 자치구 기준
         List<LeagueStatus> allStatuses = leagueStatusRepository.findAll();
 
-        // 3. 각 자치구별로 weeklyScore를 채우되, 없으면 0점 처리
-        List<LeagueRankUnitResponse> list = new ArrayList<>();
-
-        for (LeagueStatus status : allStatuses) {
-            RegionType region = status.getRegion();
-            int weeklyScore = scoreByRegionId.getOrDefault(region.getId(), 0);
-
-            list.add(LeagueRankUnitResponse.builder()
-                    .regionId(region.getId())
-                    .regionName(region.getName())
-                    .weeklyScore(weeklyScore)
-                    .leagueType(status.getType().getName())
-                    .leagueColorCode(status.getType().getColorCode())
-                    .rank(0) // 일단 0으로 넣고, 나중에 정렬 후 순위 매김
-                    .build());
+        // 리그 타입별 그룹 Map 초기화
+        Map<String, List<LeagueRankUnitResponse>> result = new HashMap<>();
+        for (LeagueType type : LeagueType.values()) {
+            result.put(type.toString(), new ArrayList<>());
         }
 
-        // 4. 점수 기준으로 정렬 (동점이면 regionName 기준 등 추가로 정렬 조건 줄 수 있음)
-        list.sort(Comparator
-                .comparingInt(LeagueRankUnitResponse::weeklyScore)
-                .reversed()
-                .thenComparing(LeagueRankUnitResponse::regionName));
+        // DTO 변환
+        List<LeagueRankUnitResponse> allRankDtos = new ArrayList<>();
 
-        // 5. rank 부여
-        List<LeagueRankUnitResponse> ranked = new ArrayList<>();
-        for (int i = 0; i < list.size(); i++) {
-            LeagueRankUnitResponse u = list.get(i);
-            ranked.add(new LeagueRankUnitResponse(
-                    u.regionId(),
-                    u.regionName(),
-                    u.weeklyScore(),
-                    u.leagueType(),
-                    u.leagueColorCode(),
-                    i + 1
+        for (LeagueStatus s : allStatuses) {
+            RegionType region = s.getRegion();
+            LeagueType type = s.getType();
+
+            int score = scores.getOrDefault(region.getId(), 0);
+
+            allRankDtos.add(new LeagueRankUnitResponse(
+                    region.getId(),
+                    buildRegionFullName(region),
+                    score,
+                    0
             ));
         }
 
-        return LeagueRankResponse.builder()
-                .year(year)
-                .weekNumber(weekNumber)
-                .ranks(ranked)
-                .build();
+        // 점수 기준 정렬 + 동점 순위 처리 (1,1,3)
+        allRankDtos.sort(Comparator.comparingInt(LeagueRankUnitResponse::weeklyScore).reversed());
+
+        int currentRank = 1;
+        int actualRank = 1;
+        Integer lastScore = null;
+
+        List<LeagueRankUnitResponse> ranked = new ArrayList<>();
+
+        for (LeagueRankUnitResponse dto : allRankDtos) {
+            if (lastScore != null && dto.weeklyScore() != lastScore) {
+                actualRank = currentRank;
+            }
+
+            ranked.add(new LeagueRankUnitResponse(
+                    dto.regionId(),
+                    dto.regionName(),
+                    dto.weeklyScore(),
+                    actualRank
+            ));
+
+            lastScore = dto.weeklyScore();
+            currentRank++;
+        }
+
+        // 리그 타입별로 분리해서 담기
+        for (LeagueRankUnitResponse dto : ranked) {
+            LeagueType type = leagueStatusRepository.findByRegion_Id(dto.regionId())
+                    .orElseThrow()
+                    .getType();
+            result.get(type.toString()).add(dto);
+        }
+
+        return new LeagueRankResponse(year, month, weekNumber, result);
+    }
+
+    private String buildRegionFullName(RegionType region) {
+        Deque<String> names = new ArrayDeque<>();
+        RegionType current = region;
+
+        while (current != null) {
+            names.addFirst(current.getName());
+            current = current.getParent();
+        }
+
+        return String.join(" ", names); // "서울특별시 강남구"
     }
 }
