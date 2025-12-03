@@ -89,30 +89,35 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
             """);
 
         // 검색 조건 동적 추가
-        List<String> conditions = new ArrayList<>();
-
-        if (request.keyword() != null && !request.keyword().isBlank()) {
-            sql.append(" AND ").append("(f.name ILIKE :keyword");
-        }
+        List<String> orConditions = new ArrayList<>();
+        List<String> filterConditions = new ArrayList<>();
 
         if (regionCode != null) {
-            conditions.add("f.region_cd LIKE :regionCode || '%'");
+            filterConditions.add("f.region_cd LIKE :regionCode || '%'");
         }
 
         if (facilityTypes != null && !facilityTypes.isEmpty()) {
-            conditions.add("f.facility_type = ANY(:facilityTypes)");
+            filterConditions.add("f.facility_type = ANY(:facilityTypes)");
         }
 
         if (request.isVoucherAvailable() != null && request.isVoucherAvailable()) {
-            conditions.add("f.is_voucher_available = true");
+            filterConditions.add("f.is_voucher_available = true");
         }
 
         // WHERE 절에 조건 추가
-        if (!conditions.isEmpty()) {
-            sql.append(" OR ").append(String.join(" AND ", conditions)).append(")");
+        if (!filterConditions.isEmpty()) {
+            String filterGroup = "(" + String.join(" AND ", filterConditions) + ")";
+            orConditions.add(filterGroup);
         }
-        else {
-            sql.append(")");
+
+        if (request.keyword() != null && !request.keyword().isBlank()) {
+            orConditions.add("(f.name ILIKE :keyword)");
+        }
+
+        if (!orConditions.isEmpty()) {
+            sql.append(" AND (");
+            sql.append(String.join(" OR ", orConditions));
+            sql.append(")\n");
         }
 
 
@@ -271,38 +276,40 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
             """);
 
         // ✅ 동적 검색 조건 추가
-        List<String> conditions = new ArrayList<>();
-
-
-        if (request.keyword() != null && !request.keyword().isBlank()) {
-            sql.append(" AND ").append("(f.name ILIKE :keyword");
-        }
+        List<String> orConditions = new ArrayList<>();
+        List<String> filterConditions = new ArrayList<>();
 
         if (regionCode != null) {
-            conditions.add("f.region_cd LIKE :regionCode || '%'");
+            filterConditions.add("f.region_cd LIKE :regionCode || '%'");
         }
 
         if (facilityTypes != null && !facilityTypes.isEmpty()) {
-            conditions.add("f.facility_type = ANY(:facilityTypes)");
+            filterConditions.add("f.facility_type = ANY(:facilityTypes)");
         }
 
         if (request.isVoucherAvailable() != null && request.isVoucherAvailable()) {
-            conditions.add("f.is_voucher_available = true");
+            filterConditions.add("f.is_voucher_available = true");
         }
 
         // ✅ 커서 조건 추가
         if (request.hasCursor()) {
-            conditions.add("f.id < :cursor");
+            filterConditions.add("f.id < :cursor");
         }
 
         // ✅ 조건들을 AND로 연결 (공백 명확히 관리)
-        if (!conditions.isEmpty()) {
-            sql.append(" OR ");
-            sql.append(String.join(" AND ", conditions));
-            sql.append(")\n");  // 다음 절과 명확히 구분
+        if (!filterConditions.isEmpty()) {
+            String filterGroup = "(" + String.join(" AND ", filterConditions) + ")";
+            orConditions.add(filterGroup);
         }
-        else {
-            sql.append(")");
+
+        if (request.keyword() != null && !request.keyword().isBlank()) {
+            orConditions.add("(f.name ILIKE :keyword)");
+        }
+
+        if (!orConditions.isEmpty()) {
+            sql.append(" AND (");
+            sql.append(String.join(" OR ", orConditions));
+            sql.append(")\n");
         }
 
         // ✅ GROUP BY (앞에 공백 확보)

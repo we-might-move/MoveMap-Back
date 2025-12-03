@@ -100,16 +100,17 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
             """);
 
         // ✅ 동적 조건 생성
-        List<String> conditions = new ArrayList<>();
+        List<String> orConditions = new ArrayList<>();
+        List<String> filterConditions = new ArrayList<>();
 
         // 지역
         if (regionCode != null) {
-            conditions.add("p.region_cd LIKE :regionCode || '%'");
+            filterConditions.add("p.region_cd LIKE :regionCode || '%'");
         }
 
         // 시설 타입
         if (facilityTypes != null && !facilityTypes.isEmpty()) {
-            conditions.add("p.facility_type = ANY(:facilityTypes)");
+            filterConditions.add("p.facility_type = ANY(:facilityTypes)");
         }
 
         // ✅ 가격 필터 (0 체크 + NULL 처리)
@@ -118,38 +119,43 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 
         if (isFreeSearch) {
             // 무료 프로그램만 검색
-            conditions.add("p.price = 0");
+            filterConditions.add("p.price = 0");
         } else {
             // 일반 가격 범위
             if (request.minPrice() != null && request.minPrice() > 0) {
-                conditions.add("p.price IS NOT NULL AND p.price >= :minPrice");
+                filterConditions.add("p.price IS NOT NULL AND p.price >= :minPrice");
             }
 
             if (request.maxPrice() != null && request.maxPrice() > 0) {
-                conditions.add("p.price IS NOT NULL AND p.price <= :maxPrice");
+                filterConditions.add("p.price IS NOT NULL AND p.price <= :maxPrice");
             }
         }
 
         // ✅ 요일 비트마스크
         if (weekDayTypes != null && !weekDayTypes.isEmpty()) {
-            conditions.add("(p.weekday_number & :weekdayBitmask) > 0");
+            filterConditions.add("(p.weekday_number & :weekdayBitmask) > 0");
         }
 
         // ✅ 연령 비트마스크
         if (request.minAge() != null || request.maxAge() != null) {
-            conditions.add("(p.target IS NULL OR (p.target & :targetBitmask) > 0)");
+            filterConditions.add("(p.target IS NULL OR (p.target & :targetBitmask) > 0)");
         }
 
         // ✅ WHERE 절에 조건 추가 (여기서 한 번만!)
-        if (!conditions.isEmpty()) {
-            sql.append(" AND (");
-            sql.append(String.join(" AND ", conditions));
-            sql.append(")\n");
+        if (!filterConditions.isEmpty()) {
+            String filterGroup = "(" + String.join(" AND ", filterConditions) + ")";
+            orConditions.add(filterGroup);
         }
 
         // 키워드
         if (request.keyword() != null && !request.keyword().isBlank()) {
-            sql.append(" OR ").append("(p.name ILIKE :keyword)");
+            orConditions.add("(p.name ILIKE :keyword)");
+        }
+
+        if (!orConditions.isEmpty()) {
+            sql.append(" AND (");
+            sql.append(String.join(" OR ", orConditions));
+            sql.append(")\n");
         }
 
         // GROUP BY
@@ -309,7 +315,6 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
     public List<ProgramListResponse.ProgramItem> findProgramsByViewport(Long memberId, ProgramListBySearchRequest request, String regionCode, List<FacilityType> facilityTypes, List<Integer> weekDayTypes, int size) {
         StringBuilder sql = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
 
         params.put("memberId", memberId);
 
@@ -369,15 +374,18 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
         params.put("southWestLat", request.southWestLat());
         params.put("southWestLng", request.southWestLng());
 
+        List<String> filterConditions = new ArrayList<>();
+        List<String> orConditions = new ArrayList<>();
+
         // 지역 필터
         if (regionCode != null) {
-            conditions.add("p.region_cd LIKE :regionCode || '%'");
+            filterConditions.add("p.region_cd LIKE :regionCode || '%'");
             params.put("regionCode", regionCode);
         }
 
         // 시설 타입 필터
         if (facilityTypes != null && !facilityTypes.isEmpty()) {
-            conditions.add("p.facility_type = ANY(:facilityTypes)");
+            filterConditions.add("p.facility_type = ANY(:facilityTypes)");
             String[] typeArray = facilityTypes.stream()
                     .map(Enum::name)
                     .toArray(String[]::new);
@@ -386,53 +394,58 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 
         // 가격 필터
         if (request.isFreeSearch()) {
-            conditions.add("p.price = 0");
+            filterConditions.add("p.price = 0");
         } else {
             if (request.minPrice() != null && request.minPrice() > 0) {
-                conditions.add("p.price IS NOT NULL AND p.price >= :minPrice");
+                filterConditions.add("p.price IS NOT NULL AND p.price >= :minPrice");
                 params.put("minPrice", request.minPrice());
             }
             if (request.maxPrice() != null && request.maxPrice() > 0) {
-                conditions.add("p.price IS NOT NULL AND p.price <= :maxPrice");
+                filterConditions.add("p.price IS NOT NULL AND p.price <= :maxPrice");
                 params.put("maxPrice", request.maxPrice());
             }
         }
 
         // 요일 필터
         if (weekDayTypes != null && !weekDayTypes.isEmpty()) {
-            conditions.add("(p.weekday_number & :weekdayBitmask) > 0");
+            filterConditions.add("(p.weekday_number & :weekdayBitmask) > 0");
             int weekdayBitmask = weekdaysToBitmask(weekDayTypes);
             params.put("weekdayBitmask", weekdayBitmask);
         }
 
         // 연령 필터
         if (request.minAge() != null || request.maxAge() != null) {
-            conditions.add("(p.target IS NULL OR (p.target & :targetBitmask) > 0)");
+            filterConditions.add("(p.target IS NULL OR (p.target & :targetBitmask) > 0)");
             int targetBitmask = ageToBitmask(request.minAge(), request.maxAge());
             params.put("targetBitmask", targetBitmask);
         }
 
         // 날짜 필터
         if (request.startDate() != null) {
-            conditions.add("(p.end_date IS NULL OR p.end_date >= :startDate)");
+            filterConditions.add("(p.end_date IS NULL OR p.end_date >= :startDate)");
             params.put("startDate", request.startDate());
         }
         if (request.endDate() != null) {
-            conditions.add("(p.begin_date IS NULL OR p.begin_date <= :endDate)");
+            filterConditions.add("(p.begin_date IS NULL OR p.begin_date <= :endDate)");
             params.put("endDate", request.endDate());
         }
 
         // 조건 추가
-        if (!conditions.isEmpty()) {
-            sql.append(" AND (");
-            sql.append(String.join(" AND ", conditions));
-            sql.append(")\n");
+        if (!filterConditions.isEmpty()) {
+            String filterGroup = "(" + String.join(" AND ", filterConditions) + ")";
+            orConditions.add(filterGroup);
         }
 
         // 키워드 검색
         if (request.keyword() != null && !request.keyword().isBlank()) {
-            sql.append(" OR ").append("(p.name ILIKE :keyword OR p.address ILIKE :keyword OR p.facility_subtype ILIKE :keyword)");
+            orConditions.add("(p.name ILIKE :keyword OR p.address ILIKE :keyword OR p.facility_subtype ILIKE :keyword)");
             params.put("keyword", "%" + request.keyword() + "%");
+        }
+
+        if (!orConditions.isEmpty()) {
+            sql.append(" AND (");
+            sql.append(String.join(" OR ", orConditions));
+            sql.append(")\n");
         }
 
         // 커서 기반 페이징
