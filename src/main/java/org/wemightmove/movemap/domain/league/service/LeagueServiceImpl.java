@@ -1,16 +1,25 @@
 package org.wemightmove.movemap.domain.league.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.league.dto.response.LeagueRankResponse;
 import org.wemightmove.movemap.domain.league.dto.response.LeagueRankUnitResponse;
+import org.wemightmove.movemap.domain.league.dto.response.RegionLeagueResponse;
 import org.wemightmove.movemap.domain.league.entity.LeagueStatus;
 import org.wemightmove.movemap.domain.league.entity.WeeklyRegionScore;
 import org.wemightmove.movemap.domain.league.repository.LeagueStatusRepository;
 import org.wemightmove.movemap.domain.league.repository.WeeklyRegionScoreRepository;
+import org.wemightmove.movemap.domain.member.entity.Member;
+import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.enums.LeagueType;
+import org.wemightmove.movemap.global.exception.CustomException;
+import org.wemightmove.movemap.global.exception.ErrorCode;
+import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.security.CustomUserDetails;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -24,6 +33,8 @@ public class LeagueServiceImpl implements LeagueService {
 
     private final WeeklyRegionScoreRepository weeklyRegionScoreRepository;
     private final LeagueStatusRepository leagueStatusRepository;
+    private final MemberRepository memberRepository;
+    private final RegionTypeRepository regionTypeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -107,6 +118,25 @@ public class LeagueServiceImpl implements LeagueService {
         return new LeagueRankResponse(year, month, weekNumber, result);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public RegionLeagueResponse getMyRegionLeague() {
+        Member member = getCurrentMember();
+
+        RegionType region = regionTypeRepository.findRegionByPrefix(member.getRegionCode())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY));
+
+        LeagueStatus status = leagueStatusRepository.findByRegion(region)
+                .orElseThrow(() -> new CustomException(ErrorCode.SERVER_ERROR));
+
+        return RegionLeagueResponse.builder()
+                .regionId(region.getId())
+                .regionName(region.getName())
+                .leagueType(status.getType().toString())
+                .leagueColorCode(status.getType().getColorCode())
+                .build();
+    }
+
     private String buildRegionFullName(RegionType region) {
         Deque<String> names = new ArrayDeque<>();
         RegionType current = region;
@@ -117,5 +147,11 @@ public class LeagueServiceImpl implements LeagueService {
         }
 
         return String.join(" ", names); // "서울특별시 강남구"
+    }
+
+    private Member getCurrentMember() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return memberRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
     }
 }
