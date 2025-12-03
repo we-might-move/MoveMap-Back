@@ -18,6 +18,19 @@ public enum LeagueType {
 
     private final String name;
     private final String colorCode;
+    private static final LeagueType[] VALUES = values();
+
+    public LeagueType next() {
+        int idx = this.ordinal();
+        if(idx == VALUES.length - 1) return this;
+        return VALUES[idx + 1];
+    }
+
+    public LeagueType prev() {
+        int idx = this.ordinal();
+        if(idx == 0) return this;
+        return VALUES[idx - 1];
+    }
 
     @JsonCreator
     public static LeagueType from(String s) {
