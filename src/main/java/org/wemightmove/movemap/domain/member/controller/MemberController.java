@@ -127,6 +127,12 @@ public class MemberController {
         return ResponseEntity.ok(memberQueryService.getMemberInfo(member.getId()));
     }
 
+    @Operation(summary = "자식 리스트 조회", description = "자식 리스트를 조회합니다.")
+    @GetMapping("/children")
+    public ResponseEntity<ChildListResponse> getChildList() {
+        return ResponseEntity.ok(memberQueryService.getChildList());
+    }
+
     @Operation(summary = "개인 점수 조회", description = "사용자의 운동 기록을 기반으로 계산한 점수를 조회합니다.")
     @GetMapping("/score")
     public ResponseEntity<MemberScoreResponse> getMemberScore(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {

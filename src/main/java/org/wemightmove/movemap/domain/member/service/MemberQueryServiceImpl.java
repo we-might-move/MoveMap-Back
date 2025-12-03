@@ -189,6 +189,25 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         throw new CustomException(ErrorCode.SERVER_ERROR);
     }
 
+    @Override
+    public ChildListResponse getChildList() {
+        Member member = getCurrentMember();
+        if(!member.getRole().equals(RoleType.PARENT)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+        List<Member> children = parentChildRepository.findChildMembersByParent(member);
+
+        List<ChildListResponse.ChildResponse> childResponses = children.stream()
+                .map(child -> new ChildListResponse.ChildResponse(
+                        child.getId(),
+                        child.getNickname(),
+                        child.getRole().name()
+                ))
+                .toList();
+
+        return new ChildListResponse(childResponses);
+    }
+
     private String buildInviteKey(Long parentId, Long childId) {
         return INVITE_PREFIX + parentId + ":" + childId;
     }
