@@ -11,6 +11,14 @@ import java.util.List;
 
 public interface ParentChildRepository extends JpaRepository<ParentChild, Long> {
     List<ParentChild> findAllByParent(Member parent);
+
+    @Query("""
+       SELECT pc.child 
+       FROM ParentChild pc
+       JOIN  pc.child 
+       WHERE pc.parent = :parent
+       """)
+    List<Member> findChildMembersByParent(@Param("parent") Member parent);
     List<ParentChild> findAllByChild(Member child);
 
     boolean existsByParentAndChild(Member parent, Member child);
