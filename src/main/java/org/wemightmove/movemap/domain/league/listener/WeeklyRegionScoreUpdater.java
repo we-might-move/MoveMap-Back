@@ -3,9 +3,8 @@ package org.wemightmove.movemap.domain.league.listener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.wemightmove.movemap.domain.league.entity.WeeklyRegionScore;
 import org.wemightmove.movemap.domain.league.repository.DailyRegionScoreRepository;
 import org.wemightmove.movemap.domain.league.repository.WeeklyRegionScoreRepository;
@@ -26,7 +25,6 @@ public class WeeklyRegionScoreUpdater {
     private final RegionTypeRepository regionTypeRepository;
 
     @Async
-    @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(MemberScoreUpdatedEvent event) {
 
