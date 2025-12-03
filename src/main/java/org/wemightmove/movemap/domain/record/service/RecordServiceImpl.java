@@ -1,6 +1,7 @@
 package org.wemightmove.movemap.domain.record.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.entity.MemberScore;
+import org.wemightmove.movemap.domain.member.event.MemberScoreUpdatedEvent;
 import org.wemightmove.movemap.domain.member.entity.ParentChild;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberScoreRepository;
@@ -44,7 +46,9 @@ public class RecordServiceImpl implements RecordService {
     private final CheckInRecordRepository checkInRecordRepository;
     private final FacilityRepository facilityRepository;
     private final MemberScoreRepository memberScoreRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final ParentChildRepository parentChildRepository;
+
 
     @Override
     @Transactional
@@ -69,6 +73,13 @@ public class RecordServiceImpl implements RecordService {
         //점수 계산을 위한 필드 업데이트
         MemberScore score = getOrCreateMemberScore(member, LocalDate.now());
         score.addSelfDuration(durationMinutes);
+
+        //이벤트 발행
+        eventPublisher.publishEvent(MemberScoreUpdatedEvent.builder()
+                .member(member)
+                .regionCd(member.getRegionCode())
+                .date(record.getDate())
+                .build());
     }
 
     @Override
@@ -115,6 +126,13 @@ public class RecordServiceImpl implements RecordService {
         //점수 계산을 위한 필드 업데이트
         MemberScore score = getOrCreateMemberScore(member, date);
         score.updateTotalSteps(request.count());
+
+        //이벤트 발행
+        eventPublisher.publishEvent(MemberScoreUpdatedEvent.builder()
+                .member(member)
+                .regionCd(member.getRegionCode())
+                .date(record.getDate())
+                .build());
     }
 
     @Override
@@ -191,6 +209,13 @@ public class RecordServiceImpl implements RecordService {
         //점수 계산을 위한 필드 업데이트
         MemberScore score = getOrCreateMemberScore(member, record.getDate());
         score.addCheckInDuration(record.getDurationMinutes());
+
+        //이벤트 발행
+        eventPublisher.publishEvent(MemberScoreUpdatedEvent.builder()
+                .member(member)
+                .regionCd(member.getRegionCode())
+                .date(record.getDate())
+                .build());
     }
 
 

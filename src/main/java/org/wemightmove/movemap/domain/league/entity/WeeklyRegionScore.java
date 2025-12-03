@@ -33,4 +33,16 @@ public class WeeklyRegionScore extends BaseTimeEntity {
 
     @Column(name = "score")
     private int score;
+
+    public WeeklyRegionScore(RegionType region, int year, int month, int weekNumber, int score) {
+        this.region = region;
+        this.year = year;
+        this.month = month;
+        this.weekNumber = weekNumber;
+        this.score = score;
+    }
+
+    public void updateScore(int score) {
+        this.score = score;
+    }
 }
