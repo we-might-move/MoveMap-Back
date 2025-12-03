@@ -22,4 +22,7 @@ public interface RegionTypeRepository extends JpaRepository<RegionType, Long> {
 
     @Query("SELECT r FROM RegionType r WHERE r.name = :name")
     Optional<RegionType> findRegionByName(@Param("name") String name);
+
+    @Query("SELECT r FROM RegionType r WHERE r.prefix = :prefix")
+    Optional<RegionType> findRegionByPrefix(@Param("prefix") String prefix);
 }

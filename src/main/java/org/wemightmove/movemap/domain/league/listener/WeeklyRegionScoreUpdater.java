@@ -1,15 +1,18 @@
 package org.wemightmove.movemap.domain.league.listener;
 
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.league.entity.WeeklyRegionScore;
+import org.wemightmove.movemap.domain.league.event.DailyRegionScoreCompletedEvent;
 import org.wemightmove.movemap.domain.league.repository.DailyRegionScoreRepository;
 import org.wemightmove.movemap.domain.league.repository.WeeklyRegionScoreRepository;
-import org.wemightmove.movemap.domain.member.event.MemberScoreUpdatedEvent;
 import org.wemightmove.movemap.global.entity.RegionType;
+import org.wemightmove.movemap.global.exception.CustomException;
+import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 
 import java.time.DayOfWeek;
@@ -26,10 +29,11 @@ public class WeeklyRegionScoreUpdater {
     private final RegionTypeRepository regionTypeRepository;
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(MemberScoreUpdatedEvent event) {
-
-        RegionType region = regionTypeRepository.getReferenceById(Long.parseLong(event.regionCd()));
+    @Transactional
+    @EventListener
+    public void handle(DailyRegionScoreCompletedEvent event) {
+        RegionType region = regionTypeRepository.findRegionByPrefix(event.regionCd())
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY));
         LocalDate date = event.date();
 
         WeekFields weekFields = WeekFields.of(Locale.KOREA);
