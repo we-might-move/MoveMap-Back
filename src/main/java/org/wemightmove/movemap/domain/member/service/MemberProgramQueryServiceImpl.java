@@ -24,9 +24,15 @@ public class MemberProgramQueryServiceImpl implements MemberProgramQueryService 
                                                            Long cursor,
                                                            Integer size) {
 
-        List<FavoriteProgramResponse> programs = memberProgramRepository.findFavoriteProgramsByMemberId(
-                memberId, currentLatitude, currentLongitude, cursor, size + 1
-        );
+        List<FavoriteProgramResponse> programs = null;
+        if (currentLatitude != null && currentLongitude != null) {
+            programs = memberProgramRepository.findFavoriteProgramsByMemberIdWithDistance(
+                    memberId, currentLatitude, currentLongitude, cursor, size + 1
+            );
+        }
+        else {
+            programs = memberProgramRepository.findFavoriteProgramsByMemberId(memberId, cursor, size + 1);
+        }
 
         boolean hasNext = programs.size() > size;
         if(hasNext) {

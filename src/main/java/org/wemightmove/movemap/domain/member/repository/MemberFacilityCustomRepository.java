@@ -14,4 +14,5 @@ public interface MemberFacilityCustomRepository {
             Long cursor,
             int size
     );
+    List<FavoriteFacilityResponse> findFavoriteFacility(Long memberId, Long cursor, int size);
 }

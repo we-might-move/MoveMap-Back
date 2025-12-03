@@ -75,8 +75,8 @@ public class MemberController {
     @GetMapping("/bookmarks/facilities")
     public ResponseEntity<FavoriteFacilityPageResponse> getFavoriteFacilityList(
             @AuthenticationPrincipal CustomUserDetails member,
-            @RequestParam("latitude") BigDecimal latitude,
-            @RequestParam("longitude") BigDecimal longitude,
+            @RequestParam(value = "latitude", required = false) BigDecimal latitude,
+            @RequestParam(value = "longitude", required = false) BigDecimal longitude,
             @RequestParam(name = "cursor", required = false) Long cursor,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size) {
 
@@ -90,8 +90,8 @@ public class MemberController {
     @GetMapping("/bookmarks/programs")
     public ResponseEntity<FavoriteProgramListResponse> getFavoriteProgramList(
             @AuthenticationPrincipal CustomUserDetails member,
-            @RequestParam("latitude") BigDecimal latitude,
-            @RequestParam("longitude") BigDecimal longitude,
+            @RequestParam(value = "latitude", required = false) BigDecimal latitude,
+            @RequestParam(value = "longitude", required = false) BigDecimal longitude,
             @RequestParam(name = "cursor", required = false) Long cursor,
             @RequestParam(name = "size", required = false, defaultValue = "20") Integer size) {
 
