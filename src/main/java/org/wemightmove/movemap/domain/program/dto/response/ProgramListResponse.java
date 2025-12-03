@@ -3,6 +3,8 @@ package org.wemightmove.movemap.domain.program.dto.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.wemightmove.movemap.global.enums.FacilityType;
+import org.wemightmove.movemap.global.util.AgeGroupUtil;
+import org.wemightmove.movemap.global.util.WeekdayUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -72,8 +74,8 @@ public record ProgramListResponse(
             @JsonFormat(pattern = "yyyy-MM-dd")
             LocalDate endDate,
 
-            @Schema(description = "요일 번호 (비트마스크)", example = "62")
-            Integer weekdayNumber,
+            @Schema(description = "운영 요일 목록", example = "[\"월\", \"화\", \"수\", \"목\", \"금\"]")
+            String[] weekdays,
 
             @Schema(description = "가격", example = "30000")
             Integer price,
@@ -86,8 +88,8 @@ public record ProgramListResponse(
             @JsonFormat(pattern = "HH:mm")
             LocalTime endTime,
 
-            @Schema(description = "대상 연령 (비트마스크)", example = "255")
-            Integer target,
+            @Schema(description = "대상 연령 범위", example = "[\"초등 1-2학년\", \"초등 3-4학년\", \"초등 5-6학년\"]")
+            String[] targetAgeGroups,
 
             @Schema(description = "정원", example = "20")
             Integer capacity,
@@ -116,11 +118,11 @@ public record ProgramListResponse(
                     (String) row[7],                                                            // hmpgUrl
                     row[8] != null ? ((java.sql.Date) row[8]).toLocalDate() : null,           // beginDate
                     row[9] != null ? ((java.sql.Date) row[9]).toLocalDate() : null,         // endDate
-                    row[10] != null ? ((Number) row[10]).intValue() : null,                   // weekdayNumber
+                    row[10] != null ? WeekdayUtil.decodeWeekdays(((Number) row[10]).intValue()) : null,                   // weekdayNumber
                     row[11] != null ? ((Number) row[11]).intValue() : null,                   // price
                     row[12] != null ? ((java.sql.Time) row[12]).toLocalTime() : null,         // startTime
                     row[13] != null ? ((java.sql.Time) row[13]).toLocalTime() : null,         // endTime
-                    row[14] != null ? ((Number) row[14]).intValue() : null,                   // target
+                    row[14] != null ? AgeGroupUtil.decodeAgeGroups(((Number) row[14]).intValue()) : null,                   // target
                     row[15] != null ? ((Number) row[15]).intValue() : null,                   // capacity
                     row[16] != null ? ((Number) row[16]).doubleValue() : null,                // distance
                     row[17] != null ? ((Number) row[17]).doubleValue() : 0.0,                 // avgRating
