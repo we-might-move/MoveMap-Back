@@ -29,8 +29,8 @@ public interface ProgramReviewRepository extends JpaRepository<ProgramReview, Lo
             FROM program_review pr
             INNER JOIN member m ON pr.member_id = m.id
             INNER JOIN program p ON pr.program_id = p.id
-            LEFT JOIN facility f ON p.name = f.name 
-                AND ST_DWithin(
+            LEFT JOIN facility f ON 
+                ST_DWithin(
                     p.location::geography,
                     f.location::geography,
                     100
