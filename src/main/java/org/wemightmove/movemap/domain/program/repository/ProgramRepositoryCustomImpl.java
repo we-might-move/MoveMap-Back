@@ -102,11 +102,6 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
         // ✅ 동적 조건 생성
         List<String> conditions = new ArrayList<>();
 
-        // 키워드
-        if (request.keyword() != null && !request.keyword().isBlank()) {
-            conditions.add("p.name ILIKE :keyword");
-        }
-
         // 지역
         if (regionCode != null) {
             conditions.add("p.region_cd LIKE :regionCode || '%'");
@@ -147,9 +142,14 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 
         // ✅ WHERE 절에 조건 추가 (여기서 한 번만!)
         if (!conditions.isEmpty()) {
-            sql.append(" AND ");
+            sql.append(" AND (");
             sql.append(String.join(" AND ", conditions));
-            sql.append("\n");
+            sql.append(")\n");
+        }
+
+        // 키워드
+        if (request.keyword() != null && !request.keyword().isBlank()) {
+            sql.append(" OR ").append("(p.name ILIKE :keyword)");
         }
 
         // GROUP BY
@@ -369,12 +369,6 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
         params.put("southWestLat", request.southWestLat());
         params.put("southWestLng", request.southWestLng());
 
-        // 키워드 검색
-        if (request.keyword() != null && !request.keyword().isBlank()) {
-            conditions.add("(p.name ILIKE :keyword OR p.address ILIKE :keyword OR p.facility_subtype ILIKE :keyword)");
-            params.put("keyword", "%" + request.keyword() + "%");
-        }
-
         // 지역 필터
         if (regionCode != null) {
             conditions.add("p.region_cd LIKE :regionCode || '%'");
@@ -430,9 +424,15 @@ public class ProgramRepositoryCustomImpl implements ProgramRepositoryCustom {
 
         // 조건 추가
         if (!conditions.isEmpty()) {
-            sql.append(" AND ");
+            sql.append(" AND (");
             sql.append(String.join(" AND ", conditions));
-            sql.append("\n");
+            sql.append(")\n");
+        }
+
+        // 키워드 검색
+        if (request.keyword() != null && !request.keyword().isBlank()) {
+            sql.append(" OR ").append("(p.name ILIKE :keyword OR p.address ILIKE :keyword OR p.facility_subtype ILIKE :keyword)");
+            params.put("keyword", "%" + request.keyword() + "%");
         }
 
         // 커서 기반 페이징
