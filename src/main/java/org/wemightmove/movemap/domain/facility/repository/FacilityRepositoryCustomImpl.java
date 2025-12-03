@@ -92,7 +92,7 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
         List<String> conditions = new ArrayList<>();
 
         if (request.keyword() != null && !request.keyword().isBlank()) {
-            conditions.add("f.name ILIKE :keyword");
+            sql.append(" AND ").append("(f.name ILIKE :keyword");
         }
 
         if (regionCode != null) {
@@ -109,8 +109,12 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
 
         // WHERE 절에 조건 추가
         if (!conditions.isEmpty()) {
-            sql.append(" AND ").append(String.join(" AND ", conditions));
+            sql.append(" OR ").append(String.join(" AND ", conditions)).append(")");
         }
+        else {
+            sql.append(")");
+        }
+
 
         // 정렬: 검색 조건 있으면 최신순, 없으면 거리순
         if (request.hasSearchConditions()) {
@@ -269,8 +273,9 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
         // ✅ 동적 검색 조건 추가
         List<String> conditions = new ArrayList<>();
 
+
         if (request.keyword() != null && !request.keyword().isBlank()) {
-            conditions.add("f.name ILIKE :keyword");
+            sql.append(" AND ").append("(f.name ILIKE :keyword");
         }
 
         if (regionCode != null) {
@@ -292,9 +297,12 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
 
         // ✅ 조건들을 AND로 연결 (공백 명확히 관리)
         if (!conditions.isEmpty()) {
-            sql.append(" AND ");
+            sql.append(" OR ");
             sql.append(String.join(" AND ", conditions));
-            sql.append("\n");  // 다음 절과 명확히 구분
+            sql.append(")\n");  // 다음 절과 명확히 구분
+        }
+        else {
+            sql.append(")");
         }
 
         // ✅ GROUP BY (앞에 공백 확보)
