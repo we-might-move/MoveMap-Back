@@ -10,8 +10,8 @@ import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.entity.MemberScore;
-import org.wemightmove.movemap.domain.member.event.MemberScoreUpdatedEvent;
 import org.wemightmove.movemap.domain.member.entity.ParentChild;
+import org.wemightmove.movemap.domain.member.event.MemberScoreUpdatedEvent;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberScoreRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
@@ -31,14 +31,18 @@ import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class RecordServiceImpl implements RecordService {
+
+    private static final int DAILY_TARGET_MINUTES = 60;
 
     private final MemberRepository memberRepository;
     private final SelfRecordRepository selfRecordRepository;
@@ -278,12 +282,10 @@ public class RecordServiceImpl implements RecordService {
         if (member.getRole().equals(RoleType.PARENT)) {
             List<ParentChild> childList = parentChildRepository.findAllByParent(member);
 
-            // 자식이 아예 없으면 없다고 설정
             if (childList.isEmpty()) {
                 throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
             }
 
-            // 자식이 있으면 해당 자식을 target 으로 설정
             target = childList.get(0).getChild();
         }
 
@@ -316,6 +318,100 @@ public class RecordServiceImpl implements RecordService {
                 .month(month)
                 .flags(flagMap)
                 .build();
+    }
+
+
+    @Override
+    public WeeklyReportResponse getChildWeeklyReport(LocalDate baseDate) {
+        Member parent = getCurrentMember();
+        if(!parent.getRole().equals(RoleType.PARENT)) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
+
+        List<Member> children = parentChildRepository.findChildMembersByParent(parent);
+
+        if(children.isEmpty()) {
+            throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
+        }
+
+        LocalDate date = baseDate != null ? baseDate : LocalDate.now();
+        LocalDate weekStart = date.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = weekStart.plusDays(6);
+
+        long childId = children.get(0).getId();
+
+        Map<LocalDate, Integer> dailyTotalMinutes = getDailyTotalMinutes(
+                children.get(0), weekStart, weekEnd
+        );
+
+        Map<String, WeeklyReportResponse.DailyAchievement> dailyAchievements = new LinkedHashMap<>();
+
+        for (int i = 0; i < 7; i++) {
+            LocalDate current = weekStart.plusDays(i);
+
+            int totalMinutes = dailyTotalMinutes.getOrDefault(current, 0);
+            int score = calculateAchievementRate(totalMinutes, DAILY_TARGET_MINUTES);
+
+            String key = current.getDayOfWeek().name();
+
+            dailyAchievements.put(
+                    key,
+                    new WeeklyReportResponse.DailyAchievement(
+                            current,
+                            score
+                    )
+            );
+        }
+
+        return new WeeklyReportResponse(
+                childId,
+                weekStart,
+                weekEnd,
+                dailyAchievements
+        );
+    }
+
+    private Map<LocalDate, Integer> getDailyTotalMinutes(Member child,
+                                                         LocalDate start,
+                                                         LocalDate end) {
+
+        List<MemberScore> scores = memberScoreRepository.findByMemberAndDateBetween(
+                child, start, end
+        );
+
+        Map<LocalDate, Integer> result = new HashMap<>();
+
+        for (MemberScore score : scores) {
+            LocalDate date = score.getDate();
+
+            int selfMinutes = score.getTotalSelfDuration();      // 분 단위
+            int checkinMinutes = score.getTotalCheckinDuration(); // 분 단위
+            int stepsMinutes = convertStepsToMinutes(score.getTotalSteps());
+
+            int totalMinutes = selfMinutes + checkinMinutes + stepsMinutes;
+
+            result.put(date, totalMinutes);
+        }
+
+        return result;
+    }
+
+    private int convertStepsToMinutes(int steps) {
+        if (steps <= 0) {
+            return 0;
+        }
+        double minutes = (steps / 3000.0) * 30.0;
+        // 소수점은 반올림해서 분 단위
+        return (int) Math.round(minutes);
+    }
+
+    private int calculateAchievementRate(int totalMinutes, int targetMinutes) {
+        if (targetMinutes <= 0) return 0;
+
+        double rate = (double) totalMinutes / targetMinutes * 100;
+        int rounded = (int) Math.round(rate);
+
+        return Math.max(0, Math.min(rounded, 100)); // 0~100 사이로 제한
     }
 
     private Member getCurrentMember() {
