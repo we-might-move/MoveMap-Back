@@ -236,7 +236,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
         // 4. 지역 코드로 변경
         if (updateMemberRequest.city() != null && updateMemberRequest.district() != null) {
-            RegionType regionType = regionTypeRepository.findRegionByNameAndParentName(updateMemberRequest.city(), updateMemberRequest.district())
+            RegionType regionType = regionTypeRepository.findRegionByNameAndParentName(updateMemberRequest.district(), updateMemberRequest.city())
                     .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR));
 
             regionCode = regionType.getPrefix();
