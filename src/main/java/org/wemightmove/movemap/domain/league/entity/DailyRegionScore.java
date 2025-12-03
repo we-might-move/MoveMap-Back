@@ -34,4 +34,14 @@ public class DailyRegionScore extends BaseTimeEntity {
 
     @Column(name = "score")
     private int score;
+
+    public DailyRegionScore(RegionType region, LocalDate date, int score) {
+        this.region = region;
+        this.date = date;
+        this.score = score;
+    }
+
+    public void updateScore(int score) {
+        this.score = score;
+    }
 }
