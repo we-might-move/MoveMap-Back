@@ -12,7 +12,7 @@ import org.wemightmove.movemap.domain.program.dto.response.ProgramReviewResponse
 import org.wemightmove.movemap.domain.program.repository.ProgramReviewRepository;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
-import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.util.RegionService;
 
 import java.util.List;
 
@@ -21,8 +21,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ProgramReviewQueryServiceImpl implements ProgramReviewQueryService {
     private final ProgramReviewRepository programReviewRepository;
-    private final RegionTypeRepository regionTypeRepository;
     private final MemberRepository memberRepository;
+    private final RegionService regionService;
 
     @Override
     public ProgramReviewListResponse getProgramReviews(Long memberId, ProgramReviewRequest request) {
@@ -62,10 +62,9 @@ public class ProgramReviewQueryServiceImpl implements ProgramReviewQueryService 
 
     private String getRegionCode(String city, String district) {
         if (city == null && district == null) return null;
-        else if(city == null) return regionTypeRepository.findRegionByName(district).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getPrefix();
-        else if(district == null) return regionTypeRepository.findRegionByName(city).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getPrefix();
-
-        return regionTypeRepository.findRegionByNameAndParentName(district, city).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR)).getPrefix();
+        else if(city == null) return regionService.getObjectByName(district).getPrefix();
+        else if(district == null) return regionService.getObjectByName(city).getPrefix();
+        return regionService.getCodeByCityNameAndDistrictName(city, district);
     }
 
     private Member getMember(Long memberId) {

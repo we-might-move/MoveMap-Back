@@ -20,7 +20,7 @@ import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
-import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.util.RegionService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -34,13 +34,13 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
 
     private final MemberRepository memberRepository;
     private final ProgramRepository programRepository;
-    private final RegionTypeRepository regionTypeRepository;
+    private final RegionService regionService;
 
     @Override
     public ProgramMarkerResponse getMarkers(Long memberId) {
         Member member = getMember(memberId);
 
-        RegionType regionType = regionTypeRepository.findChildRegionTypeByPrefix(member.getRegionCode()).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT));
+        RegionType regionType = regionService.getObjectByCode(member.getRegionCode());
 
         List<ProgramMarkerResponse.MarkerInfo> markers = programRepository.findMakersByRegionCode(regionType.getCenterLatitude(), regionType.getCenterLongitude(), DEFAULT_MAX_MARKERS, memberId);
 
@@ -168,10 +168,9 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
 
     private String getRegionCode(String city, String district) {
         if (city == null && district == null) return null;
-        else if(city == null) return regionTypeRepository.findRegionByName(district).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getPrefix();
-        else if(district == null) return regionTypeRepository.findRegionByName(city).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getPrefix();
-
-        return regionTypeRepository.findRegionByNameAndParentName(district, city).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR)).getPrefix();
+        else if(city == null) return regionService.getObjectByName(district).getPrefix();
+        else if(district == null) return regionService.getObjectByName(city).getPrefix();
+        return regionService.getCodeByCityNameAndDistrictName(city, district);
     }
 
     private Member getMember(Long memberId) {

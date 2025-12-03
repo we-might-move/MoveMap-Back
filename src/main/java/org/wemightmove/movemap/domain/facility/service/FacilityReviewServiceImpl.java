@@ -15,7 +15,7 @@ import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
-import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.util.RegionService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,7 +28,7 @@ public class FacilityReviewServiceImpl implements FacilityReviewService {
     private final FacilityReviewRepository facilityReviewRepository;
     private final MemberRepository memberRepository;
     private final FacilityRepository facilityRepository;
-    private final RegionTypeRepository regionTypeRepository;
+    private final RegionService regionService;
 
     @Override
     @Transactional
@@ -70,7 +70,7 @@ public class FacilityReviewServiceImpl implements FacilityReviewService {
             );
 
         } else {
-            String regionCode = regionTypeRepository.findRegionByName(request.district()).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getPrefix();
+            String regionCode = getRegionCode(request.city(), request.district());
             // 지역 기반 조회
             rawResults = facilityReviewRepository.findReviewsByRegion(
                     regionCode,
@@ -113,5 +113,12 @@ public class FacilityReviewServiceImpl implements FacilityReviewService {
 
     private Facility getFacility(Long facilityId) {
         return facilityRepository.findById(facilityId).orElseThrow(() -> new CustomException(ErrorCode.FACILITY_NOT_FOUND));
+    }
+
+    private String getRegionCode(String city, String district) {
+        if (city == null && district == null) return null;
+        else if(city == null) return regionService.getObjectByName(district).getPrefix();
+        else if(district == null) return regionService.getObjectByName(city).getPrefix();
+        return regionService.getCodeByCityNameAndDistrictName(city, district);
     }
 }

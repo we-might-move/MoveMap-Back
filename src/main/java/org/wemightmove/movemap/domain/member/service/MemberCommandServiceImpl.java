@@ -20,10 +20,9 @@ import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
 import org.wemightmove.movemap.domain.notification.service.FcmPushService;
-import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
-import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.util.RegionService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,7 +44,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     private final MemberFacilityRepository memberFacilityRepository;
     private final MemberProgramRepository memberProgramRepository;
     private final NotificationRepository notificationRepository;
-    private final RegionTypeRepository regionTypeRepository;
+    private final RegionService regionService;
 
     // 알림 전송 서비스
     private final FcmPushService fcmPushService;
@@ -231,18 +230,15 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         }
 
         String regionCode = null;
-        String city = getCity(member.getRegionCode().substring(0, 2));
-        String district = getDistrict(member.getRegionCode().substring(0, 4));
+        String city = regionService.getCityNameByCode(member.getRegionCode());
+        String district = regionService.getDistrictNameByCode(member.getRegionCode());
 
         // 4. 지역 코드로 변경
         if (updateMemberRequest.city() != null && updateMemberRequest.district() != null) {
-            RegionType regionType = regionTypeRepository.findRegionByNameAndParentName(updateMemberRequest.district(), updateMemberRequest.city())
-                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_FAIR));
+            regionCode = regionService.getCodeByCityNameAndDistrictName(updateMemberRequest.city(), updateMemberRequest.district());
 
-            regionCode = regionType.getPrefix();
-
-            city = getCity(regionCode.substring(0, 2));
-            district = getDistrict(regionCode.substring(0, 4));
+            city = regionService.getCityNameByCode(regionCode);
+            district = regionService.getDistrictNameByCode(regionCode);
         }
 
         // 5. 회원 정보 수정
@@ -282,13 +278,5 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         // 자식의 받은 목록에서 제거
         String receivedListKey = SENT_LIST_PREFIX + childId;
         redisTemplate.opsForSet().remove(receivedListKey, parentId.toString());
-    }
-
-    private String getCity(String cityCode) {
-        return regionTypeRepository.findParentRegionTypeByPrefix(cityCode).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getName();
-    }
-
-    private String getDistrict(String districtCode) {
-        return regionTypeRepository.findChildRegionTypeByPrefix(districtCode).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getName();
     }
 }

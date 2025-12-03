@@ -18,8 +18,8 @@ import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.global.enums.RoleType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
-import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
+import org.wemightmove.movemap.global.util.RegionService;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -33,8 +33,8 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     private final ObjectMapper objectMapper;
     private final MemberRepository memberRepository;
     private final ParentChildRepository parentChildRepository;
-    private final RegionTypeRepository regionTypeRepository;
     private final MemberScoreRepository memberScoreRepository;
+    private final RegionService regionService;
 
     private static final String INVITE_PREFIX = "invite:";
     private static final String SENT_LIST_PREFIX = "invites:sent:";
@@ -131,8 +131,8 @@ public class MemberQueryServiceImpl implements MemberQueryService {
 
         Member member = getMember(memberId);
 
-        String city = getCityNameByRegionCode(member.getRegionCode());
-        String district = getDistrictNameRegionCode(member.getRegionCode());
+        String city = regionService.getCityNameByCode(member.getRegionCode());
+        String district = regionService.getDistrictNameByCode(member.getRegionCode());
 
         return MemberInfoResponse.from(member, city, district);
     }
@@ -201,13 +201,5 @@ public class MemberQueryServiceImpl implements MemberQueryService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return memberRepository.findById(((CustomUserDetails) authentication.getPrincipal()).getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-    }
-
-    private String getCityNameByRegionCode(String regionCode) {
-        return regionTypeRepository.findParentRegionTypeByPrefix(regionCode.substring(0, 2)).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_CITY)).getName();
-    }
-
-    private String getDistrictNameRegionCode(String regionCode) {
-        return regionTypeRepository.findChildRegionTypeByPrefix(regionCode.substring(0, 4)).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getName();
     }
 }

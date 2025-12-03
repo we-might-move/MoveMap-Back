@@ -12,10 +12,7 @@ import java.util.Optional;
 public interface RegionTypeRepository extends JpaRepository<RegionType, Long> {
 
     @Query("SELECT r FROM RegionType r WHERE r.prefix = :prefix")
-    Optional<RegionType> findParentRegionTypeByPrefix(@Param("prefix") String prefix);
-
-    @Query("SELECT r FROM RegionType r WHERE r.prefix LIKE CONCAT(:prefix, '%')")
-    Optional<RegionType> findChildRegionTypeByPrefix(@Param("prefix") String prefix);
+    Optional<RegionType> findRegionTypeByPrefix(@Param("prefix") String prefix);
 
     @Query("SELECT r FROM RegionType r WHERE r.name = :name and r.parent.name = :parentName")
     Optional<RegionType> findRegionByNameAndParentName(@Param("name") String name, @Param("parentName") String parentName);
