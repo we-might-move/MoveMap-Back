@@ -1,5 +1,6 @@
 package org.wemightmove.movemap.domain.record.service;
 
+import org.wemightmove.movemap.domain.record.dto.response.WeeklyReportResponse;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
@@ -18,4 +19,6 @@ public interface RecordService {
     CheckInStatusResponse findCheckInStatus();
     DailyCheckInRecordResponse findDailyCheckInRecord(LocalDate date);
     MonthDailyFlagsResponse findMonthDailyFlagsList(int year, int month);
+    WeeklyReportResponse getChildWeeklyReport(LocalDate date);
+
 }

@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.wemightmove.movemap.domain.record.dto.response.WeeklyReportResponse;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
@@ -82,5 +83,12 @@ public class RecordController {
     public ResponseEntity<MonthDailyFlagsResponse> monthDailyFlagsList(@RequestParam int year, @RequestParam int month) {
         MonthDailyFlagsResponse result = recordService.findMonthDailyFlagsList(year, month);
         return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "위클리 리포트 조회", description = "학부모 화면에서 아이의 위클리 리포트를 조회합니다.")
+    @GetMapping("/children/weekly")
+    public ResponseEntity<WeeklyReportResponse> getChildWeeklyReport(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(recordService.getChildWeeklyReport(date));
+
     }
 }
