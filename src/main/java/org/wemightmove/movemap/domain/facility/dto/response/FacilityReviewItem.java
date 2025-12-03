@@ -13,6 +13,7 @@ public record FacilityReviewItem(
 
         Long reviewId,
         Integer rating,
+        String reviewTitle,
         String reviewContent,
         String reviewerNickname,
 
@@ -29,6 +30,7 @@ public record FacilityReviewItem(
             Double distance,
             Long reviewId,
             Integer rating,
+            String reviewTitle,
             String reviewContent,
             String reviewerNickname
     ) {
@@ -42,6 +44,7 @@ public record FacilityReviewItem(
                 distance,
                 reviewId,
                 rating,
+                reviewTitle,
                 reviewContent,
                 reviewerNickname,
                 reviewId // cursor는 reviewId 사용

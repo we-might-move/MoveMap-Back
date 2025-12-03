@@ -27,20 +27,25 @@ public class MemberFacilityQueryServiceImpl implements MemberFacilityQueryServic
     @Override
     public FavoriteFacilityPageResponse getFavoriteList(Long memberId, BigDecimal currentLatitude, BigDecimal currentLongitude, Long cursor, Integer size) {
 
-        // 1. 위치 정보 검증
-        validateLocation(currentLatitude, currentLongitude);
-
-        // 2. 페이지 크기 검증 및 기본값 설정
+        // 1. 페이지 크기 검증 및 기본값 설정
         int validatedSize = validatePageSize(size);
 
-        // 3. size+1 개 조회 (hasNext 판단용)
-        List<FavoriteFacilityResponse> facilities = memberFacilityRepository.findFavoriteFacilityWithDistance(
-                memberId,
-                currentLatitude,
-                currentLongitude,
-                cursor,
-                validatedSize + 1
-        );
+        // 2. 위치 정보 검증
+        List<FavoriteFacilityResponse> facilities = null;
+        if (currentLatitude != null && currentLongitude != null) {
+            validateLocation(currentLatitude, currentLongitude);
+            // 3. size+1 개 조회 (hasNext 판단용)
+            facilities = memberFacilityRepository.findFavoriteFacilityWithDistance(
+                    memberId,
+                    currentLatitude,
+                    currentLongitude,
+                    cursor,
+                    validatedSize + 1
+            );
+        }
+        else {
+            facilities = memberFacilityRepository.findFavoriteFacility(memberId, cursor, validatedSize + 1);
+        }
 
         return buildPageResponse(facilities, validatedSize);
     }
@@ -67,9 +72,9 @@ public class MemberFacilityQueryServiceImpl implements MemberFacilityQueryServic
     }
 
     private void validateLocation(BigDecimal latitude, BigDecimal longitude) {
-        if (latitude == null || longitude == null) {
-            throw new CustomException(ErrorCode.MISSING_PARAMETER);
-        }
+//        if (latitude == null || longitude == null) {
+//            throw new CustomException(ErrorCode.MISSING_PARAMETER);
+//        }
 
         if (isOutOfRangeLatitude(latitude)) {
             throw new CustomException(ErrorCode.WRONG_LATITUDE);
