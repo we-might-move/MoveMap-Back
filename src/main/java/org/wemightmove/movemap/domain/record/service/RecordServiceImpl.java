@@ -9,8 +9,10 @@ import org.wemightmove.movemap.domain.facility.entity.Facility;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.entity.MemberScore;
+import org.wemightmove.movemap.domain.member.entity.ParentChild;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.MemberScoreRepository;
+import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordAddRequest;
 import org.wemightmove.movemap.domain.record.dto.request.CheckInRecordModifyRequest;
 import org.wemightmove.movemap.domain.record.dto.request.SelfRecordAddRequest;
@@ -22,6 +24,7 @@ import org.wemightmove.movemap.domain.record.entity.StepsRecord;
 import org.wemightmove.movemap.domain.record.repository.CheckInRecordRepository;
 import org.wemightmove.movemap.domain.record.repository.SelfRecordRepository;
 import org.wemightmove.movemap.domain.record.repository.StepsRecordRepository;
+import org.wemightmove.movemap.global.enums.RoleType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
@@ -41,6 +44,7 @@ public class RecordServiceImpl implements RecordService {
     private final CheckInRecordRepository checkInRecordRepository;
     private final FacilityRepository facilityRepository;
     private final MemberScoreRepository memberScoreRepository;
+    private final ParentChildRepository parentChildRepository;
 
     @Override
     @Transactional
@@ -71,7 +75,24 @@ public class RecordServiceImpl implements RecordService {
     @Transactional(readOnly = true)
     public DailySelfRecordResponse findDailySelfRecord(LocalDate date) {
         Member member = getCurrentMember();
-        List<SelfRecord> records = selfRecordRepository.findByMemberAndDate(member, date);
+
+        // 부모가 아니면 자기 기록을 열람하는 것이므로 할당
+        Member target = member;
+
+        // 만약 부모이면 연결된 자식 기록 열람하도록 함
+        if (member.getRole().equals(RoleType.PARENT)) {
+            List<ParentChild> childList = parentChildRepository.findAllByParent(member);
+
+            // 자식이 아예 없으면 없다고 설정
+            if (childList.isEmpty()) {
+                throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
+            }
+
+            // 자식이 있으면 해당 자식을 target 으로 설정
+            target = childList.get(0).getChild();
+        }
+
+        List<SelfRecord> records = selfRecordRepository.findByMemberAndDate(target, date);
         DailySelfRecordResponse response = DailySelfRecordResponse.builder()
                 .date(date)
                 .records(records.stream()
@@ -100,8 +121,25 @@ public class RecordServiceImpl implements RecordService {
     @Transactional(readOnly = true)
     public DailyStepsRecordResponse findDailyStepsRecord(LocalDate date) {
         Member member = getCurrentMember();
-        StepsRecord record = stepsRecordRepository.findByMemberAndDate(member, date)
-                .orElse(StepsRecord.builder().member(member).date(date).build());
+
+        // 부모가 아니면 자기 기록을 열람하는 것이므로 할당
+        Member target = member;
+
+        // 만약 부모이면 연결된 자식 기록 열람하도록 함
+        if (member.getRole().equals(RoleType.PARENT)) {
+            List<ParentChild> childList = parentChildRepository.findAllByParent(member);
+
+            // 자식이 아예 없으면 없다고 설정
+            if (childList.isEmpty()) {
+                throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
+            }
+
+            // 자식이 있으면 해당 자식을 target 으로 설정
+            target = childList.get(0).getChild();
+        }
+
+        StepsRecord record = stepsRecordRepository.findByMemberAndDate(target, date)
+                .orElse(StepsRecord.builder().member(target).date(date).build());
         DailyStepsRecordResponse response = DailyStepsRecordResponse.builder()
                 .date(date)
                 .count(record.getCount())
@@ -170,7 +208,24 @@ public class RecordServiceImpl implements RecordService {
     @Transactional(readOnly = true)
     public DailyCheckInRecordResponse findDailyCheckInRecord(LocalDate date) {
         Member member = getCurrentMember();
-        List<CheckInRecord> records = checkInRecordRepository.findDailyCheckInRecords(member, date);
+
+        // 부모가 아니면 자기 기록을 열람하는 것이므로 할당
+        Member target = member;
+
+        // 만약 부모이면 연결된 자식 기록 열람하도록 함
+        if (member.getRole().equals(RoleType.PARENT)) {
+            List<ParentChild> childList = parentChildRepository.findAllByParent(member);
+
+            // 자식이 아예 없으면 없다고 설정
+            if (childList.isEmpty()) {
+                throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
+            }
+
+            // 자식이 있으면 해당 자식을 target 으로 설정
+            target = childList.get(0).getChild();
+        }
+
+        List<CheckInRecord> records = checkInRecordRepository.findDailyCheckInRecords(target, date);
         DailyCheckInRecordResponse response = DailyCheckInRecordResponse.builder()
                 .date(date)
                 .records(records.stream()
@@ -191,11 +246,27 @@ public class RecordServiceImpl implements RecordService {
     public MonthDailyFlagsResponse findMonthDailyFlagsList(int year, int month) {
         Member member = getCurrentMember();
 
+        // 부모가 아니면 자기 기록을 열람하는 것이므로 할당
+        Member target = member;
+
+        // 만약 부모이면 연결된 자식 기록 열람하도록 함
+        if (member.getRole().equals(RoleType.PARENT)) {
+            List<ParentChild> childList = parentChildRepository.findAllByParent(member);
+
+            // 자식이 아예 없으면 없다고 설정
+            if (childList.isEmpty()) {
+                throw new CustomException(ErrorCode.CHILD_NOT_FOUND);
+            }
+
+            // 자식이 있으면 해당 자식을 target 으로 설정
+            target = childList.get(0).getChild();
+        }
+
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
         List<MemberScore> scores =
-                memberScoreRepository.findByMemberAndDateBetween(member, startDate, endDate);
+                memberScoreRepository.findByMemberAndDateBetween(target, startDate, endDate);
 
         int daysInMonth = startDate.lengthOfMonth();
         boolean[] flags = new boolean[daysInMonth + 1];
