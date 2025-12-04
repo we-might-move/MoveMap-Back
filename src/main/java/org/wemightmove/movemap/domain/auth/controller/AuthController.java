@@ -78,6 +78,14 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "임시 비밀번호 발송", description = "사용자의 비밀번호를 임의로 변경하고 사용자의 이메일로 바뀐 비밀번호를 발송합니다.")
+    @PostMapping("/email/password")
+    public ResponseEntity<Void> sendTemporaryPassword(@RequestBody @Valid TemporaryPasswordRequest request) {
+        authService.sendTemporaryPassword(request);
+        return ResponseEntity.noContent().build();
+    }
+
+
     @Operation(summary = "비밀번호 재설정", description = "비밀번호를 변경합니다.")
     @PatchMapping("/password")
     public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
