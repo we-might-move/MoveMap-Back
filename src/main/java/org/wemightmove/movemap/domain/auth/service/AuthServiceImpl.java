@@ -32,6 +32,7 @@ import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 import org.wemightmove.movemap.global.util.RedisService;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,7 @@ public class AuthServiceImpl implements AuthService{
     private final RegionTypeRepository regionTypeRepository;
     private final JavaMailSender javaMailSender;
     private final SpringTemplateEngine templateEngine;
+    private static final String TEMP_PASSWORD_CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
 
 
     @Override
@@ -214,6 +216,27 @@ public class AuthServiceImpl implements AuthService{
 
     @Override
     @Transactional
+    public void sendTemporaryPassword(TemporaryPasswordRequest request) {
+        Member member = memberRepository.findByEmail(request.email())
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        String temporaryPassword = generateTemporaryPassword(12);
+        member.changePassword(passwordEncoder.encode(temporaryPassword));
+
+        String title = "[MoveMap] 임시 비밀번호 전송"; //이메일 제목
+
+        HashMap<String,Object> map = new HashMap<>();
+        map.put("password", temporaryPassword);
+
+        Context context = new Context();
+        context.setVariables(map); //템플릿에 전달할 데이터
+        String content = templateEngine.process("tempPassword.html", context);
+
+        sendEmail(request.email(), title, content);
+    }
+
+    @Override
+    @Transactional
     public void changePassword(ChangePasswordRequest request) {
         Member member = getCurrentMember();
         if(!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
@@ -229,6 +252,18 @@ public class AuthServiceImpl implements AuthService{
         member.changePassword(passwordEncoder.encode(request.newPassword()));
         memberRepository.save(member);
     }
+
+    private String generateTemporaryPassword(int length) {
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            int idx = random.nextInt(TEMP_PASSWORD_CHAR_SET.length());
+            sb.append(TEMP_PASSWORD_CHAR_SET.charAt(idx));
+        }
+        return sb.toString();
+    }
+
 
     private String createUuid() {
         String uuid = UUID.randomUUID().toString().replace("-","");

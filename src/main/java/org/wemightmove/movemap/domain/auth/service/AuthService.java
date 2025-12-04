@@ -11,5 +11,6 @@ public interface AuthService {
     KakaoLoginResponse loginWithKakao(KakaoLoginRequest request);
     void sendVerificationMail(SendVerificationMailRequest request);
     void verifyCode(VerifyRequest request);
+    void sendTemporaryPassword(TemporaryPasswordRequest request);
     void changePassword(ChangePasswordRequest request);
 }
