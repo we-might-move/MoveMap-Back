@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Slf4j
-@Configuration
+//@Configuration
 public class FirebaseConfig {
 
     @Value("${firebase.config-path}")
