@@ -1,7 +1,9 @@
 package org.wemightmove.movemap.domain.notification.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.wemightmove.movemap.domain.member.entity.Member;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.wemightmove.movemap.domain.notification.entity.Notification;
 
 import java.util.List;
@@ -14,4 +16,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     void deleteByFcmToken(String fcmToken);
     void deleteByMemberIdAndDeviceId(Long memberId, String deviceId);
     boolean existsByMemberIdAndDeviceId(Long memberId, String deviceId);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.member.id = :memberId")
+    int deleteAllByMemberId(@Param("memberId") Long memberId);
 }

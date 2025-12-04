@@ -4,14 +4,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.notification.dto.request.DeviceRegisterRequest;
 import org.wemightmove.movemap.domain.notification.service.NotificationService;
 import org.wemightmove.movemap.global.security.CustomUserDetails;
 
-/**
- * FIXME : Auth 완성되면 memberId 부분 수정
- */
 @RestController
 @Tag(name = "Notification")
 @RequiredArgsConstructor
@@ -22,26 +20,28 @@ public class NotificationController {
 
     @PostMapping
     public ResponseEntity<Void> registerDevice(
-            @RequestParam("memberId") Long memberId,
+            @AuthenticationPrincipal CustomUserDetails member,
             @Valid @RequestBody DeviceRegisterRequest request) {
 
-        notificationService.registerDevice(memberId, request);
+        notificationService.registerDevice(member.getId(), request);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{deviceId}/push")
     public ResponseEntity<Void> updatePushEnabled(
-            @RequestParam("memberId") Long memberId,
+            @AuthenticationPrincipal CustomUserDetails member,
             @PathVariable String deviceId,
             @RequestParam boolean enabled) {
 
-        notificationService.updatePushEnabled(memberId, deviceId, enabled);
+        notificationService.updatePushEnabled(member.getId(), deviceId, enabled);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{deviceId}")
-    public ResponseEntity<Void> unregisterDevice(@RequestParam("memberId") Long memberId, @PathVariable String deviceId) {
-        notificationService.unregisterDevice(memberId, deviceId);
+    public ResponseEntity<Void> unregisterDevice(
+            @AuthenticationPrincipal CustomUserDetails member,
+            @PathVariable String deviceId) {
+        notificationService.unregisterDevice(member.getId(), deviceId);
         return ResponseEntity.ok().build();
     }
 }

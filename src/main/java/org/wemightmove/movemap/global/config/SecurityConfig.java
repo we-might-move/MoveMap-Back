@@ -35,7 +35,7 @@ public class SecurityConfig {
     private static final String[] AUTH_WHITELIST = {
             "/error", "/favicon.ico", "/health",
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**",
-            "/auth/login", "/auth/kakao", "/auth/token"
+            "/auth/signup", "/auth/login", "/auth/kakao", "/auth/token", "/auth/email/*"
     };
 
 
