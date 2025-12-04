@@ -1,5 +1,6 @@
 package org.wemightmove.movemap.domain.notification.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,16 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+    @Operation(
+            summary = "알림 토큰 등록",
+            description = """
+            EXPO 토큰을 등록합니다.
+            등록 예시
+            - fcmToken : ExponentPushToken[-nCUSiBPR6D3qA26LDJ4rT]
+            - deviceType : ANDROID / IOS
+            - deviceId : 기기 고유 번호
+            """
+    )
     @PostMapping
     public ResponseEntity<Void> registerDevice(
             @AuthenticationPrincipal CustomUserDetails member,

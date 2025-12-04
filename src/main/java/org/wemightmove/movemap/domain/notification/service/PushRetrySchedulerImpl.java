@@ -11,7 +11,7 @@ import org.wemightmove.movemap.domain.notification.repository.NotificationReposi
 import org.springframework.beans.factory.annotation.Value;
 
 @Slf4j
-@Component
+//@Component
 @RequiredArgsConstructor
 public class PushRetrySchedulerImpl implements PushRetryScheduler {
 

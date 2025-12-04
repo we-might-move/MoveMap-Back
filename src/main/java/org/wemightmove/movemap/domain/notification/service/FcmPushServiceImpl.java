@@ -8,7 +8,6 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.entity.Notification;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
@@ -20,9 +19,9 @@ import org.wemightmove.movemap.global.exception.FcmRetryableException;
 import java.util.List;
 
 @Slf4j
-@Service
+//@Service
 @RequiredArgsConstructor
-public class FcmPushServiceImpl implements FcmPushService {
+public class FcmPushServiceImpl implements PushService {
 
     private final NotificationRepository notificationRepository;
     private final FailedNotificationService failedNotificationService;
@@ -70,12 +69,12 @@ public class FcmPushServiceImpl implements FcmPushService {
         }
     }
 
-    @Override
     @Recover
-    public void recoverFailedPush(FcmRetryableException e, Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
+    @Override
+    public void recoverFailedPush(RuntimeException e, Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
         log.error("푸시 전송 최종 실패");
-
-        failedNotificationService.saveFailedPush(memberId, fcmToken, deviceType, pushMessageResponse, e.getErrorCode());
+        FcmRetryableException exception = (FcmRetryableException) e;
+        failedNotificationService.saveFailedPush(memberId, fcmToken, deviceType, pushMessageResponse, exception.getErrorCode());
     }
 
     // FCM 메시지 생성
