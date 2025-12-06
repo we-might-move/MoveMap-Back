@@ -36,12 +36,14 @@ public class ProgramController {
     private final ProgramReviewQueryService programReviewQueryService;
     private final ProgramCommandService programCommandService;
 
+    @Operation(summary = "프로그램 북마크 추가")
     @PostMapping("/{id}/bookmarks")
     public ResponseEntity<Void> bookmarkFacility(@AuthenticationPrincipal CustomUserDetails member, @PathVariable("id") Long programId) {
         programCommandService.addBookmarkProgram(member.getId(), programId);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "프로그램 북마크 제거")
     @DeleteMapping("/{id}/bookmarks")
     public ResponseEntity<Void> deleteBookmarkFacility(@AuthenticationPrincipal CustomUserDetails member, @PathVariable("id") Long programId) {
         programCommandService.deleteBookmarkProgram(member.getId(), programId);
@@ -58,26 +60,37 @@ public class ProgramController {
     }
 
     @Operation(
-            summary = "뷰포트 프로그램 마커 조회 (검색 + 필터)",
+            summary = "프로그램 마커 조회 (Viewport + 검색)",
             description = """
-                    지도 영역(viewport) 내 프로그램을 필터링하여 마커로 반환합니다.
-                    
-                    필터 조건:
-                    - 키워드: 프로그램명 검색 (부분 일치)
-                    - 지역: 시/도 + 시/군/구
-                    - 시설 타입: BALL_GAME, MARTIAL_ARTS, FITNESS 등
-                    - 가격: 최소/최대 금액
-                    - 요일: 월 ~ 일
-                    - 연령: 최소/최대 나이
-                    
-                    정렬:
-                    - 필터 있음: 프로그램 수 많은 순
-                    - 필터 없음: 거리순 (viewport 중심 기준)
-                    
-                    성능:
-                    - Bounding Box 기반 공간 인덱스 활용
-                    - 응답 시간: ~20ms
-                    """
+            지도에 표시할 프로그램 마커 조회 (좌표별 그룹핑)
+            
+            Viewport 좌표 (필수)
+            - northEastLat, northEastLng : 상단 우측 모서리
+            - southWestLat, southWestLng : 하단 좌측 모서리
+            
+            마커 그룹핑
+            - 같은 좌표에 여러 프로그램 → 하나의 마커로 표시
+            - programCount: 해당 위치의 프로그램 개수
+            - representativeName: 대표 프로그램명 (최소값)
+            
+            정렬 방식
+            - 검색 조건 없음: 거리순 (Viewport 중심 기준)
+            - 검색 조건 있음: 프로그램 개수 많은 순 (program_count DESC)
+            
+            검색 조건
+            - keyword: 프로그램명 검색
+            - city, district: 지역 필터
+            - facilityTypes: 시설 유형 (다중 선택)
+            - weekDayTypes: 요일 필터 (다중 선택, 비트마스크)
+            - minPrice, maxPrice: 가격 범위 (둘 다 0이면 무료만)
+            - minAge, maxAge: 연령 범위 (비트마스크)
+            
+            검색 조건 조합 방식
+            (Viewport 필터) AND (
+                (keyword 조건) OR 
+                (city + district + facilityTypes + price + weekday + age 필터)
+            )
+            """
     )
     @GetMapping("/markers")
     public ResponseEntity<ProgramMarkerResponse> getMarkers(
@@ -90,13 +103,28 @@ public class ProgramController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 1. 프로그램 리스트 조회 (초기) - 사용자 지역 기반
-     * GET /api/v1/programs/list?cursor=100&size=20
-     */
+    @Operation(
+            summary = "프로그램 리스트 조회 (사용자 지역 기반)",
+            description = """
+            사용자가 등록한 지역 기반으로 프로그램 조회
+            
+            조회 방식
+            - 사용자 regionCode 기반 필터링
+            - 최신순 정렬 (id DESC)
+            - 거리 계산 없음 (distance = null)
+            
+            페이지네이션 (커서 기반)
+            - 첫 페이지: cursor 없이 요청
+            - 다음 페이지: 응답의 nextCursor 값을 cursor로 전달
+            - hasNext가 false면 마지막 페이지
+            
+            응답 데이터
+            - 평점(avgRating): 프로그램 리뷰 평균
+            - 리뷰 수(reviewCount): 작성된 리뷰 개수
+            - 북마크 여부(isBookmarked): 로그인 사용자의 북마크 상태
+            """
+    )
     @GetMapping("/list/initial")
-    @Operation(summary = "프로그램 리스트 조회 (초기)",
-            description = "사용자가 등록한 지역 기반으로 프로그램 목록을 조회합니다. 커서 기반 페이징을 사용합니다.")
     public ResponseEntity<ProgramListResponse> getProgramsByUserRegion(
             @AuthenticationPrincipal CustomUserDetails member,
             @Valid @ModelAttribute ProgramInitialListRequest request
@@ -108,13 +136,44 @@ public class ProgramController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 2. 프로그램 리스트 조회 (뷰포트 + 필터링)
-     * GET /api/v1/programs/search?northEastLat=37.6&northEastLng=127.1&...
-     */
+    @Operation(
+            summary = "프로그램 리스트 조회 (Viewport + 필터링)",
+            description = """
+            지도 화면 하단 리스트용 프로그램 상세 정보 조회
+            
+            Viewport 좌표 (필수)
+            - northEastLat, northEastLng : 상단 우측 모서리
+            - southWestLat, southWestLng : 하단 좌측 모서리
+            
+            거리 계산 (선택)
+            - userLat, userLng 제공 시: 사용자 위치 기준 거리 계산 (km)
+            - 미제공 시: distance = null
+            
+            정렬 방식
+            - 검색 조건 없음 + 사용자 위치 있음: 거리순 (가까운 순)
+            - 검색 조건 있음 또는 사용자 위치 없음: 최신순 (id DESC)
+            
+            검색 조건
+            - keyword: 프로그램명, 주소, 시설 세부유형 검색
+            - city, district: 지역 필터
+            - facilityTypes: 시설 유형 (다중 선택)
+            - weekDayTypes: 요일 필터 (다중 선택)
+            - minPrice, maxPrice: 가격 범위 (둘 다 0이면 무료만)
+            - minAge, maxAge: 연령 범위
+            - startDate, endDate: 날짜 범위
+            
+            검색 조건 조합 방식
+            (Viewport 필터) AND (
+                (keyword 조건) OR 
+                (필터 조합: city + district + facilityTypes + price + weekday + age + date)
+            )
+            
+            페이지네이션 (커서 기반)
+            - 첫 페이지: cursor 없이 요청
+            - 다음 페이지: 응답의 nextCursor 를 cursor 로 전달
+            """
+    )
     @GetMapping("/list")
-    @Operation(summary = "프로그램 리스트 조회 (필터링)",
-            description = "뷰포트 및 다양한 조건으로 프로그램 목록을 조회합니다. 커서 기반 페이징을 사용합니다.")
     public ResponseEntity<ProgramListResponse> getProgramsByViewportAndFilters(
             @AuthenticationPrincipal CustomUserDetails member,
             @Valid @ModelAttribute ProgramListBySearchRequest request,
@@ -133,14 +192,25 @@ public class ProgramController {
     @Operation(
             summary = "프로그램 키워드 검색",
             description = """
-            프로그램명 또는 시설명으로 키워드 검색합니다.
-            - 공백을 무시하고 검색: "강남 체육관" = "강남체육관"
-            - 프로그램명과 시설명 모두에서 검색
-            - 커서 기반 페이지네이션 지원
+            프로그램명 또는 시설명으로 키워드 검색
             
-            예시:
-            - "강남 축구" → 강남 지역의 축구 프로그램 검색
-            - "수영장" → 수영장이 있는 시설의 프로그램 검색
+            검색 방식
+            - 공백 무시: "강남 체육관" = "강남체육관"
+            - Prefix 검색: "수영" → "수영장", "수영교실" 등 매칭
+            - 프로그램명 + 시설명 모두 검색
+            
+            정렬
+            - ID 오름차순 (ASC)
+            - 커서는 마지막 ID 이상부터 조회
+            
+            페이지네이션
+            - 첫 페이지: cursor 없이 요청
+            - 다음 페이지: 응답의 nextCursor를 cursor로 전달
+            
+            사용 예시
+            - "강남 축구" → 강남 지역 축구 프로그램
+            - "수영장" → 수영장 시설의 프로그램
+            - "헬스" → 헬스 관련 프로그램
             """
     )
     @GetMapping("/search")
@@ -154,7 +224,7 @@ public class ProgramController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "프로그램 리뷰를 저장합니다.")
+    @Operation(summary = "프로그램 리뷰 저장")
     @PostMapping("/{id}/reviews")
     public ResponseEntity<ProgramReviewResponse> createReview(
             @PathVariable("id") Long facilityId,
@@ -171,7 +241,28 @@ public class ProgramController {
                 .body(response);
     }
 
-    @Operation(summary = "프로그램 리뷰 리스트를 검색합니다.")
+    @Operation(
+            summary = "프로그램 리뷰 검색",
+            description = """
+            프로그램 리뷰를 검색하여 조회
+            
+            검색 조건
+            - keyword: 리뷰 제목, 프로그램명, 시설명, 리뷰 내용 검색
+            - city, district: 지역 필터
+            
+            정렬
+            - 최신순 (id DESC)
+            
+            페이지네이션
+            - 커서 기반 (id < cursor)
+            - 첫 페이지: cursor 없이 요청
+            - 다음 페이지: 응답의 nextCursor를 cursor로 전달
+            
+            시설 매칭
+            - 프로그램 위치 기준 100m 이내 시설 자동 매칭
+            - 매칭된 시설명 우선 표시
+            """
+    )
     @GetMapping("/reviews")
     public ResponseEntity<ProgramReviewListResponse> getProgramReviews(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -186,20 +277,21 @@ public class ProgramController {
 
     @Operation(
             summary = "프로그램 상세 조회",
-            description = "프로그램 ID로 상세 정보를 조회합니다. 인증된 사용자의 경우 북마크 여부와 거리가 포함됩니다."
+            description = """
+            프로그램 ID로 상세 정보 조회
+            
+            조회 정보
+            - 프로그램 기본 정보 (이름, 주소, 가격, 시간 등)
+            - 리뷰 통계 (평균 평점, 리뷰 수)
+            - 북마크 여부 (인증된 사용자)
+            - 거리 (사용자 위치 제공 시, km 단위)
+            
+            사용자 위치
+            - userLatitude, userLongitude 제공 시 거리 계산
+            - 미제공 시 distance = null
+            - 소수점 2자리까지 표시 (예: 1.23km)
+            """
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "조회 성공",
-                    content = @Content(schema = @Schema(implementation = ProgramDetailResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "프로그램을 찾을 수 없음",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            )
-    })
     @GetMapping("/{id}")
     public ResponseEntity<ProgramDetailResponse> getProgramDetail(
             @Schema(description = "프로그램 ID", example = "1")

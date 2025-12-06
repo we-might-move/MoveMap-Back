@@ -21,7 +21,7 @@ import java.time.LocalDate;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/members")
-@Tag(name = "회원", description = "회원 관리 API")
+@Tag(name = "Member")
 public class MemberController {
 
     private final MemberQueryService memberQueryService;
@@ -54,7 +54,7 @@ public class MemberController {
         return ResponseEntity.ok(memberCommandService.sendInvite(member.getId(), sendInvitedRequest.childUuid()));
     }
 
-    @Operation(summary = "초대 수락", description = "부모의 초대를 수락하여 관계를 맺습니다")
+    @Operation(summary = "초대 수락")
     @PatchMapping("/invitations/accept")
     public ResponseEntity<AcceptInvitationResponse> acceptInvite(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -62,7 +62,7 @@ public class MemberController {
         return ResponseEntity.ok(memberCommandService.acceptInvite(member.getId(), acceptInvitationRequest));
     }
 
-    @Operation(summary = "초대 거절", description = "부모의 초대를 거절합니다")
+    @Operation(summary = "초대 거절")
     @PatchMapping("/invitations/reject")
     public ResponseEntity<Void> rejectInvite(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -71,7 +71,12 @@ public class MemberController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "찜한 시설 리스트 조회", description = "찜한 시설 리스트를 조회합니다")
+    @Operation(summary = "찜한 시설 리스트 조회",
+            description = """
+            - latitude, longitude : 시설과의 거리를 계산하기 위한 사용자 현재 위치(선택)
+            - cursor : 이전에 받은 마지막 시설 아이디(초기에는 null)
+            - size : 시설 데이터를 몇 개씩 받을 것인지(기본 20)
+            """)
     @GetMapping("/bookmarks/facilities")
     public ResponseEntity<FavoriteFacilityPageResponse> getFavoriteFacilityList(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -86,7 +91,12 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "찜한 프로그램 리스트 조회", description = "찜한 프로그램 리스트를 조회합니다")
+    @Operation(summary = "찜한 프로그램 리스트 조회",
+            description = """
+            - latitude, longitude : 프로그램 운영 시설과의 거리를 계산하기 위한 사용자 현재 위치(선택)
+            - cursor : 이전에 받은 마지막 프로그램 아이디(초기에는 null)
+            - size : 프로그램 데이터를 몇 개씩 받을 것인지(기본 20)
+            """)
     @GetMapping("/bookmarks/programs")
     public ResponseEntity<FavoriteProgramListResponse> getFavoriteProgramList(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -100,17 +110,21 @@ public class MemberController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 진행합니다.")
+    @Operation(summary = "회원 탈퇴")
     @DeleteMapping
     public ResponseEntity<MemberWithdrawResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member
     ) {
-        return ResponseEntity.ok(
-                memberCommandService.withdrawMember(member.getId())
-        );
+        return ResponseEntity.ok(memberCommandService.withdrawMember(member.getId()));
     }
 
-    @Operation(summary = "회원 정보 수정", description = "회원 정보 수정을 진행합니다.")
+    @Operation(summary = "회원 정보 수정",
+            description = """
+            - nickname : 2자 이상 20자 이하. 한글, 영문, 숫자만 가능(공백, 특수문자 불가)
+            - school : 100자 이하
+            - city, district : 둘 다 입력되어야 함
+            - sex : WOMAN, MAN
+            """)
     @PatchMapping
     public ResponseEntity<MemberInfoResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -120,14 +134,14 @@ public class MemberController {
         );
     }
 
-    @Operation(summary = "회원 정보 조회", description = "회원 정보를 조회합니다.")
+    @Operation(summary = "회원 정보 조회")
     @GetMapping
     public ResponseEntity<MemberInfoResponse> getMemberInfo(
             @AuthenticationPrincipal CustomUserDetails member) {
         return ResponseEntity.ok(memberQueryService.getMemberInfo(member.getId()));
     }
 
-    @Operation(summary = "자식 리스트 조회", description = "자식 리스트를 조회합니다.")
+    @Operation(summary = "자식 리스트 조회")
     @GetMapping("/children")
     public ResponseEntity<ChildListResponse> getChildList() {
         return ResponseEntity.ok(memberQueryService.getChildList());

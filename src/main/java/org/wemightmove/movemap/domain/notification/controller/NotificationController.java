@@ -38,6 +38,7 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "알림 허용 여부 수정")
     @PatchMapping("/{deviceId}/push")
     public ResponseEntity<Void> updatePushEnabled(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -48,6 +49,7 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "알림 기기 등록 해제", description = "deviceId : 기기의 고유 번호")
     @DeleteMapping("/{deviceId}")
     public ResponseEntity<Void> unregisterDevice(
             @AuthenticationPrincipal CustomUserDetails member,
