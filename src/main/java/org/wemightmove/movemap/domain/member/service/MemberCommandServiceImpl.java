@@ -77,7 +77,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
         }
 
         // 초대 정보 생성
-        InviteInfo inviteInfo = InviteInfo.of(parent.getId(), child.getId(), LocalDateTime.now());
+        InviteInfo inviteInfo = InviteInfo.of(parent.getId(), parent.getNickname(), child.getId(), child.getNickname(), LocalDateTime.now());
 
         try {
             String value = objectMapper.writeValueAsString(inviteInfo);

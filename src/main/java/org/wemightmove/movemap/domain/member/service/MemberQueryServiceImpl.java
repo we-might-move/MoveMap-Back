@@ -227,6 +227,6 @@ public class MemberQueryServiceImpl implements MemberQueryService {
     }
 
     private String getDistrictNameRegionCode(String regionCode) {
-        return regionTypeRepository.findChildRegionTypeByPrefix(regionCode.substring(0, 4)).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getName();
+        return regionTypeRepository.findChildRegionTypeByPrefix(regionCode.substring(0, 5)).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getName();
     }
 }
