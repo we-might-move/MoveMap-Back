@@ -60,6 +60,11 @@ dependencies {
     testImplementation 'com.redis.testcontainers:testcontainers-redis:1.6.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // Testcontainers BOM (버전 통합 관리)
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.19.8')
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
+
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
     testImplementation 'org.springframework.security:spring-security-test'
