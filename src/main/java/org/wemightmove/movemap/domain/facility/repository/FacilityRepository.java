@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FacilityRepository extends JpaRepository<Facility, Long>, FacilityRepositoryCustom {
+
+    /**
+     * FIXME: 이것도 무한 스크롤 방식으로 구현해야 할듯
+     * @param keyword
+     * @return
+     */
     @Query(value = "SELECT * FROM facility f WHERE f.name LIKE CONCAT('%', :keyword, '%') OR f.facility_subtype LIKE CONCAT('%', :keyword, '%') LIMIT 30", nativeQuery = true)
     List<Facility> searchFacilitiesByNameAndFacilitySubtype(@Param("keyword") String keyword);
 

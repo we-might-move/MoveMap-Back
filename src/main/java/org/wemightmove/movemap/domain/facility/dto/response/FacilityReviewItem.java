@@ -2,6 +2,22 @@ package org.wemightmove.movemap.domain.facility.dto.response;
 
 import java.math.BigDecimal;
 
+/**
+ * FIXME: 왜 ReviewItem 내부에 cursor가 존재하는지?
+ * @param facilityId
+ * @param facilityName
+ * @param facilityType
+ * @param address
+ * @param latitude
+ * @param longitude
+ * @param distance
+ * @param reviewId
+ * @param rating
+ * @param reviewTitle
+ * @param reviewContent
+ * @param reviewerNickname
+ * @param cursor
+ */
 public record FacilityReviewItem(
         Long facilityId,
         String facilityName,

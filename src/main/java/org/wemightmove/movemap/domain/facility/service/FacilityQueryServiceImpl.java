@@ -156,6 +156,9 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
         return FacilityListResponse.of(content, nextCursor, hasNext);
     }
 
+    /**
+     * FIXME: 뭔가 너무 곳곳에서 쓰여서 Util로 빼고 싶음. 중복 테스트가 많이 생기는 거 같음
+     */
     private String getRegionCode(String city, String district) {
         if (city == null && district == null) return null;
         else if(city == null) return regionTypeRepository.findRegionByName(district).orElseThrow(() -> new CustomException(ErrorCode.INVALID_REGION_DISTRICT)).getPrefix();

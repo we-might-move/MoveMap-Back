@@ -4,6 +4,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityInitialListRequest;
 import org.wemightmove.movemap.domain.facility.dto.request.FacilityMarkerRequest;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
@@ -139,6 +141,8 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
 
         sql.append(" LIMIT ").append(request.maxResults());
 
+        log.info("query : \n{}", sql);
+
         // ✅ Query 생성 및 파라미터 바인딩
         Query query = entityManager.createNativeQuery(sql.toString());
 
@@ -154,6 +158,7 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
         }
 
         if (regionCode != null) {
+            log.info("regionCode = {}", regionCode);
             query.setParameter("regionCode", regionCode);
         }
 
@@ -170,6 +175,9 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
             double centerLng = (request.northEastLng() + request.southWestLng()) / 2;
             query.setParameter("centerLat", centerLat);
             query.setParameter("centerLng", centerLng);
+
+            log.info("centerLat = {}", centerLat);
+            log.info("centerLng = {}", centerLng);
         }
 
         return executeMarkerQuery(query);
@@ -218,6 +226,8 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
             ORDER BY distance_meters ASC, f.id DESC
             LIMIT :limit
             """;
+
+            log.info("findListByRegionCode = \n{}", sql);
 
             Query query = entityManager.createNativeQuery(sql);
             query.setParameter("userLat", lat);
@@ -334,6 +344,8 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
 
         sql.append("LIMIT :limit");
 
+        log.info("findListByViewport = \n{}", sql);
+
         // ✅ Query 생성 및 파라미터 바인딩
         Query query = entityManager.createNativeQuery(sql.toString());
 
@@ -348,6 +360,9 @@ public class FacilityRepositoryCustomImpl implements FacilityRepositoryCustom {
         if (!request.hasSearchConditions()) {
             query.setParameter("centerLat", (request.northEastLat() + request.southWestLat()) / 2.0);
             query.setParameter("centerLng", (request.northEastLng() + request.southWestLng()) / 2.0);
+
+            log.info("centerLat : {}", (request.northEastLat() + request.southWestLat()) / 2.0);
+            log.info("centerLng : {}", (request.northEastLng() + request.southWestLng()) / 2.0);
         }
 
         // 검색 조건 파라미터
