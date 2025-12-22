@@ -21,5 +21,9 @@ public abstract class IntegrationTestSupport {
         var redis = TestContainers.getRedis();
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+
+        // flyway 사용 해제 : 필요한 데이터만 사용하기 위해서
+        registry.add("spring.flyway.enabled", () -> "false");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
     }
 }
