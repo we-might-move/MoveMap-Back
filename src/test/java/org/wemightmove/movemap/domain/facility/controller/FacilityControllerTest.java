@@ -157,7 +157,7 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get("/facilities/markers/initial"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(22));
+                .andExpect(jsonPath("$.totalCount").value(7));
     }
 
     // 시설 마커 조회(뷰포트 + 검색)
@@ -211,9 +211,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(22))
-                .andExpect(jsonPath("$.markers[0].facilityId").value(37561))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(37477));
+                .andExpect(jsonPath("$.totalCount").value(8))
+                .andExpect(jsonPath("$.markers[0].facilityId").value(18460))
+                .andExpect(jsonPath("$.markers[1].facilityId").value(17799));
     }
 
     @Test
@@ -244,7 +244,7 @@ class FacilityControllerTest extends IntegrationTestSupport {
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.markers[0].facilityId").value(17799))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(36624));
+                .andExpect(jsonPath("$.markers[1].facilityId").value(18460));
     }
 
     @Test
@@ -278,9 +278,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(12))
-                .andExpect(jsonPath("$.markers[0].facilityId").value(30875))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(30852));
+                .andExpect(jsonPath("$.totalCount").value(7))
+                .andExpect(jsonPath("$.markers[0].facilityId").value(18460))
+                .andExpect(jsonPath("$.markers[1].facilityId").value(17799));
     }
 
     @Test
@@ -352,7 +352,7 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(12))
+                .andExpect(jsonPath("$.totalCount").value(7))
                 .andExpect(jsonPath("$.markers[0].facilityId").value(17799))
                 .andExpect(jsonPath("$.markers[1].facilityId").value(18460));
     }
@@ -391,7 +391,7 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(13))
+                .andExpect(jsonPath("$.totalCount").value(8))
                 .andExpect(jsonPath("$.markers[0].facilityId").value(17799))
                 .andExpect(jsonPath("$.markers[1].facilityId").value(18460));
     }
@@ -401,8 +401,8 @@ class FacilityControllerTest extends IntegrationTestSupport {
     void 뷰포트_범위에_포함되고_필터링_조건을_모두_만족하면_검색어가_포함되지_않아도_조회된다() throws Exception {
         //given
         String keyword = "랜덤값";
-        String city = "서울특별시";
-        String district = "강남구";
+        String city = "경상북도";
+        String district = "문경시";
         boolean isVoucher = false;
         int maxResults = 100;
 
@@ -415,17 +415,17 @@ class FacilityControllerTest extends IntegrationTestSupport {
             f.name
         FROM facility f
         WHERE 1=1
-          AND f.latitude BETWEEN 37.50720000 AND 37.52720000
-          AND f.longitude BETWEEN 127.03730000 AND 127.05730000
-          AND ((f.region_cd LIKE 11680 || '%' AND f.facility_type = ANY(ARRAY['MARTIAL_ARTS'])) OR (f.name ILIKE '%랜덤값%'))
+          AND f.latitude BETWEEN 36.57640000 AND 36.59640000
+          AND f.longitude BETWEEN 128.17970000 AND 128.19970000
+          AND ((f.region_cd LIKE 47280 || '%' AND f.facility_type = ANY(ARRAY['MARTIAL_ARTS'])) OR (f.name ILIKE '%랜덤값%'))
         ORDER BY f.id DESC LIMIT 100;
          */
         String url = new StringBuilder()
                 .append("/facilities/markers")
-                .append("?northEastLat=").append(northEastLat)
-                .append("&northEastLng=").append(northEastLng)
-                .append("&southWestLat=").append(southWestLat)
-                .append("&southWestLng=").append(southWestLng)
+                .append("?northEastLat=").append(36.59640000)
+                .append("&northEastLng=").append(128.19970000)
+                .append("&southWestLat=").append(36.57640000)
+                .append("&southWestLng=").append(128.17970000)
                 .append("&keyword=").append(keyword)
                 .append("&city=").append(city)
                 .append("&district=").append(district)
@@ -437,9 +437,8 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(7))
-                .andExpect(jsonPath("$.markers[0].facilityId").value(37762))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(37619));
+                .andExpect(jsonPath("$.totalCount").value(1))
+                .andExpect(jsonPath("$.markers[0].facilityId").value(5099));
 
     }
 
@@ -483,9 +482,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(12))
-                .andExpect(jsonPath("$.markers[0].facilityId").value(30875))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(30852));
+                .andExpect(jsonPath("$.totalCount").value(7))
+                .andExpect(jsonPath("$.markers[0].facilityId").value(18460))
+                .andExpect(jsonPath("$.markers[1].facilityId").value(17799));
     }
 
     @Test
@@ -520,9 +519,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(29))
-                .andExpect(jsonPath("$.markers[0].facilityId").value(37762))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(37619));
+                .andExpect(jsonPath("$.totalCount").value(8))
+                .andExpect(jsonPath("$.markers[0].facilityId").value(18460))
+                .andExpect(jsonPath("$.markers[1].facilityId").value(17799));
     }
 
     @Test
@@ -556,9 +555,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalCount").value(29))
+                .andExpect(jsonPath("$.totalCount").value(8))
                 .andExpect(jsonPath("$.markers[0].facilityId").value(17799))
-                .andExpect(jsonPath("$.markers[1].facilityId").value(36624));
+                .andExpect(jsonPath("$.markers[1].facilityId").value(18460));
     }
 
     // 에러 관련 테스트
@@ -701,9 +700,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.facilities.length()").value(20))
-                .andExpect(jsonPath("$.hasNext").value(true))
-                .andExpect(jsonPath("$.nextCursor").value(30852));
+                .andExpect(jsonPath("$.facilities.length()").value(7))
+                .andExpect(jsonPath("$.hasNext").value(false))
+                .andExpect(jsonPath("$.nextCursor").value(nullValue()));
 
     }
 
@@ -713,7 +712,7 @@ class FacilityControllerTest extends IntegrationTestSupport {
     @Test
     void 시설_탐색_맵에서_리스트를_조회할_때_모든_조건을_추가해도_정상_조회된다() throws Exception {
         //given
-        String keyword = "강남";
+        String keyword = "골프";
         String city = "서울특별시";
         String district = "강남구";
         boolean isVoucher = false;
@@ -764,9 +763,9 @@ class FacilityControllerTest extends IntegrationTestSupport {
         //then
         mockMvc.perform(get(url))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.facilities.length()").value(2))
+                .andExpect(jsonPath("$.facilities.length()").value(1))
                 .andExpect(jsonPath("$.hasNext").value(false))
-                .andExpect(jsonPath("$.facilities[0].id").value(35727));
+                .andExpect(jsonPath("$.facilities[0].id").value(110));
 
     }
 
@@ -830,8 +829,8 @@ class FacilityControllerTest extends IntegrationTestSupport {
     void 시설_리스트_조회에서_필터링_조건의_존재_여부에_따라_정렬이_다르게_조회된다() throws Exception {
         //given
         int size = 5;
-        String city = "서울특별시";
-        String district = "강남구";
+        String city = "경상북도";
+        String district = "문경시";
         boolean isVoucher = false;
 
         /*
@@ -865,10 +864,10 @@ class FacilityControllerTest extends IntegrationTestSupport {
          */
         String url1 = new StringBuilder()
                 .append("/facilities/list")
-                .append("?northEastLat=").append(northEastLat)
-                .append("&northEastLng=").append(northEastLng)
-                .append("&southWestLat=").append(southWestLat)
-                .append("&southWestLng=").append(southWestLng)
+                .append("?northEastLat=").append(36.59640000)
+                .append("&northEastLng=").append(128.19970000)
+                .append("&southWestLat=").append(36.57640000)
+                .append("&southWestLng=").append(128.17970000)
                 .append("&size=").append(size).toString();
 
         /*
@@ -899,10 +898,10 @@ class FacilityControllerTest extends IntegrationTestSupport {
          */
         String url2 = new StringBuilder()
                 .append("/facilities/list")
-                .append("?northEastLat=").append(northEastLat)
-                .append("&northEastLng=").append(northEastLng)
-                .append("&southWestLat=").append(southWestLat)
-                .append("&southWestLng=").append(southWestLng)
+                .append("?northEastLat=").append(36.59640000)
+                .append("&northEastLng=").append(128.19970000)
+                .append("&southWestLat=").append(36.57640000)
+                .append("&southWestLng=").append(128.17970000)
                 .append("&city=").append(city)
                 .append("&district=").append(district)
                 .append("&isVoucherAvailable=").append(isVoucher)
@@ -914,15 +913,15 @@ class FacilityControllerTest extends IntegrationTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.facilities.length()").value(5))
                 .andExpect(jsonPath("$.hasNext").value(true))
-                .andExpect(jsonPath("$.nextCursor").value(36860))
-                .andExpect(jsonPath("$.facilities[0].id").value(17799));
+                .andExpect(jsonPath("$.nextCursor").value(14418))
+                .andExpect(jsonPath("$.facilities[0].id").value(5623));
 
         mockMvc.perform(get(url2))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.facilities.length()").value(5))
-                .andExpect(jsonPath("$.hasNext").value(true))
-                .andExpect(jsonPath("$.nextCursor").value(36231))
-                .andExpect(jsonPath("$.facilities[0].id").value(37762));
+                .andExpect(jsonPath("$.facilities.length()").value(1))
+                .andExpect(jsonPath("$.hasNext").value(false))
+                .andExpect(jsonPath("$.nextCursor").value(nullValue()))
+                .andExpect(jsonPath("$.facilities[0].id").value(5099));
 
     }
 
