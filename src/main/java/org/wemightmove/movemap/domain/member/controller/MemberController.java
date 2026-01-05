@@ -50,7 +50,7 @@ public class MemberController {
     public ResponseEntity<SendInviteResponse> sendInvitation(
             @AuthenticationPrincipal CustomUserDetails member,
             @RequestBody SendInvitedRequest sendInvitedRequest
-            ) {
+    ) {
         return ResponseEntity.ok(memberCommandService.sendInvite(member.getId(), sendInvitedRequest.childUuid()));
     }
 
@@ -73,10 +73,10 @@ public class MemberController {
 
     @Operation(summary = "찜한 시설 리스트 조회",
             description = """
-            - latitude, longitude : 시설과의 거리를 계산하기 위한 사용자 현재 위치(선택)
-            - cursor : 이전에 받은 마지막 시설 아이디(초기에는 null)
-            - size : 시설 데이터를 몇 개씩 받을 것인지(기본 20)
-            """)
+                    - latitude, longitude : 시설과의 거리를 계산하기 위한 사용자 현재 위치(선택)
+                    - cursor : 이전에 받은 마지막 시설 아이디(초기에는 null)
+                    - size : 시설 데이터를 몇 개씩 받을 것인지(기본 20)
+                    """)
     @GetMapping("/bookmarks/facilities")
     public ResponseEntity<FavoriteFacilityPageResponse> getFavoriteFacilityList(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -93,10 +93,10 @@ public class MemberController {
 
     @Operation(summary = "찜한 프로그램 리스트 조회",
             description = """
-            - latitude, longitude : 프로그램 운영 시설과의 거리를 계산하기 위한 사용자 현재 위치(선택)
-            - cursor : 이전에 받은 마지막 프로그램 아이디(초기에는 null)
-            - size : 프로그램 데이터를 몇 개씩 받을 것인지(기본 20)
-            """)
+                    - latitude, longitude : 프로그램 운영 시설과의 거리를 계산하기 위한 사용자 현재 위치(선택)
+                    - cursor : 이전에 받은 마지막 프로그램 아이디(초기에는 null)
+                    - size : 프로그램 데이터를 몇 개씩 받을 것인지(기본 20)
+                    """)
     @GetMapping("/bookmarks/programs")
     public ResponseEntity<FavoriteProgramListResponse> getFavoriteProgramList(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -120,11 +120,11 @@ public class MemberController {
 
     @Operation(summary = "회원 정보 수정",
             description = """
-            - nickname : 2자 이상 20자 이하. 한글, 영문, 숫자만 가능(공백, 특수문자 불가)
-            - school : 100자 이하
-            - city, district : 둘 다 입력되어야 함
-            - sex : WOMAN, MAN
-            """)
+                    - nickname : 2자 이상 20자 이하. 한글, 영문, 숫자만 가능(공백, 특수문자 불가)
+                    - school : 100자 이하
+                    - city, district : 둘 다 입력되어야 함
+                    - sex : WOMAN, MAN
+                    """)
     @PatchMapping
     public ResponseEntity<MemberInfoResponse> updateMember(
             @AuthenticationPrincipal CustomUserDetails member,
@@ -141,13 +141,19 @@ public class MemberController {
         return ResponseEntity.ok(memberQueryService.getMemberInfo(member.getId()));
     }
 
-    @Operation(summary = "자식 리스트 조회")
+    @Operation(summary = "자식 리스트 조회", description = "로그인한 학부모 사용자가 등록한 자식 회원들의 리스트를 조회합니다.")
     @GetMapping("/children")
     public ResponseEntity<ChildListResponse> getChildList() {
         return ResponseEntity.ok(memberQueryService.getChildList());
     }
 
-    @Operation(summary = "개인 점수 조회", description = "사용자의 운동 기록을 기반으로 계산한 점수를 조회합니다.")
+    @Operation(
+            summary = "개인 점수 조회",
+            description = """
+                    - [학생] 사용자의 운동 기록을 기반으로 계산한 날짜별 점수를 조회합니다.
+                    - [부모] 사용자와 연결된 자식의 운동 점수가 상위 몇%인지 조회합니다.
+                    """
+    )
     @GetMapping("/score")
     public ResponseEntity<MemberScoreResponse> getMemberScore(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         return ResponseEntity.ok(memberQueryService.getMemberScore(date));

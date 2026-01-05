@@ -19,12 +19,12 @@ public class LeagueController {
     private final LeagueService leagueService;
 
     @Operation(summary = "주간 리그 순위 조회", description = "리그별 주간 지역구 순위를 조회합니다.")
-    @GetMapping()
+    @GetMapping
     public LeagueRankResponse getCurrentRank() {
         return leagueService.getCurrentWeekRanking();
     }
 
-    @Operation(summary = "사용자가 속한 자치구 리그 타입 조회", description = "로그인한 사용자가 속한 자치구가 어느 리그에 위치하는지 조회합니다.")
+    @Operation(summary = "사용자가 속한 자치구 리그 조회", description = "로그인한 사용자가 속한 자치구가 어느 리그에 위치하는지 조회합니다.")
     @GetMapping("/status")
     public RegionLeagueResponse getMyRegionLeague() {
         return leagueService.getMyRegionLeague();

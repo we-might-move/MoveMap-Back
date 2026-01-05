@@ -88,6 +88,11 @@ public class FacilityController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * FIXME: 지금 cursor와 size 값을 넣으면 'No parameter named ':cursor' in query with named parameters' 에러가 뜨는데
+     * 왜 굳이 여기에 cursor 와 size 를 받는게 있는거지?
+     * 말 그대로, initial 이므로 초기 시설 리스트 조회니까 안 넣어도 되는건데(size 제외하고는)
+     */
     @GetMapping("/list/initial")
     @Operation(summary = "초기 시설 리스트 조회", description = "사용자 등록 지역구 반경 1km 시설 조회")
     public ResponseEntity<FacilityListResponse> getInitialFacilityList(

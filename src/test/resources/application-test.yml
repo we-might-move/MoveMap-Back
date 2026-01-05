@@ -1,0 +1,36 @@
+# src/test/resources/application-test.yml
+spring:
+  devtools:
+    restart:
+      enabled: true
+  http:
+    client:
+      connect-timeout: 5000
+      read-timeout: 5000
+
+  mail:
+    host: localhost
+    port: 3025
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+firebase:
+  enabled: false
+
+push:
+  retry:
+    max-attempts: 5
+    schedule-rate: 300000
+    batch-size: 50
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.testcontainers: INFO

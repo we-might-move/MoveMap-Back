@@ -26,40 +26,81 @@ public class RecordController {
 
     private final RecordService recordService;
 
-    @Operation(summary = "셀프 기록 추가", description = "사용자의 셀프 기록을 추가합니다.")
+    @Operation(
+            summary = "셀프 기록 추가",
+            description = """
+                    - exerciseType : 시설 유형 ENUM과 동일
+                    - hours : 시간
+                    - minutes : 분
+                    """
+    )
     @PostMapping("/self")
     public ResponseEntity<Void> selfRecordAdd(@RequestBody @Valid SelfRecordAddRequest request) {
         recordService.addSelfRecord(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "일별 셀프 기록 조회", description = "사용자의 일별 셀프 기록을 조회합니다.")
+    @Operation(
+            summary = "일별 셀프 기록 조회",
+            description = """
+                    - [학생] 사용자의 날짜별 셀프 기록을 조회합니다.
+                    - [부모] 사용자와 연결된 자식의 날짜별 셀프 기록을 조회합니다.
+                    """
+    )
     @GetMapping("/self")
     public ResponseEntity<DailySelfRecordResponse> dailySelfRecordList(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         return ResponseEntity.ok(recordService.findDailySelfRecord(date));
     }
 
-    @Operation(summary = "걷기 기록 동기화", description = "사용자의 오늘자 걸음 수 데이터를 서버에 업로드하여 최신 상태로 동기화합니다.")
+    @Operation(
+            summary = "걷기 기록 동기화",
+            description = """
+                    사용자의 오늘자 걸음 수 데이터를 서버에 업로드하여 최신 상태로 동기화합니다.
+                    - count : 0 혹은 양의 int 값
+                    - distance : 0 혹은 양의 double 값
+                    - syncedAt : 동기화 시각
+                    """
+    )
     @PostMapping("/steps")
     public ResponseEntity<Void> stepsRecordSync(@RequestBody @Valid StepsRecordSyncRequest request) {
         recordService.syncStepsRecord(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "일별 걷기 기록 조회", description = "사용자의 일별 걷기 기록을 조회합니다.")
+    @Operation(
+            summary = "일별 걷기 기록 조회",
+            description = """
+                    - [학생] 사용자의 날짜별 걷기 기록을 조회합니다.
+                    - [부모] 사용자와 연결된 자식의 날짜별 걷기 기록을 조회합니다.
+                    """
+    )
     @GetMapping("/steps")
     public ResponseEntity<DailyStepsRecordResponse> dailyStepsRecordList(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         return ResponseEntity.ok(recordService.findDailyStepsRecord(date));
     }
 
-    @Operation(summary = "체크인", description = "사용자의 체크인 기록을 추가합니다.")
+    @Operation(
+            summary = "체크인",
+            description = """
+                    요청 후 응답으로 반환되는 id 값을 이용해 체크아웃해주세요.
+                    - facilityId : 체크인하는 장소의 id 값
+                    - checkInAt : 체크인 시각
+                    """
+    )
     @PostMapping("/checkin")
     public ResponseEntity<CheckInRecordAddResponse> checkIn(@RequestBody @Valid CheckInRecordAddRequest request) {
         CheckInRecordAddResponse response = recordService.checkIn(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "체크아웃", description = "현재 체크인 상태인 기록을 체크아웃합니다.")
+    @Operation(
+            summary = "체크아웃",
+            description = """
+                    현재 체크인 상태인 기록을 체크아웃합니다.
+                    - id : 체크아웃하려는 체크인 기록의 id
+                    - checkOutAt : 체크아웃 시각
+                    """
+    )
     @PatchMapping("/checkout")
     public ResponseEntity<Void> checkOut(@RequestBody @Valid CheckInRecordModifyRequest request) {
         recordService.checkOut(request);
@@ -72,13 +113,25 @@ public class RecordController {
         return ResponseEntity.ok(recordService.findCheckInStatus());
     }
 
-    @Operation(summary = "일별 체크인 기록 조회", description = "사용자의 일별 체크인 기록을 조회합니다.")
+    @Operation(
+            summary = "일별 체크인 기록 조회",
+            description = """
+                    - [학생] 사용자의 날짜별 체크인 기록을 조회합니다.
+                    - [부모] 사용자와 연결된 자식의 날짜별 체크인 기록을 조회합니다.
+                    """
+    )
     @GetMapping("/checkin")
     public ResponseEntity<DailyCheckInRecordResponse> checkInRecordAdd(@RequestParam("date") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
         return ResponseEntity.ok(recordService.findDailyCheckInRecord(date));
     }
 
-    @Operation(summary = "월별 운동 기록 조회", description = "사용자의 월별 운동 기록을 조회합니다.")
+    @Operation(
+            summary = "월별 운동 기록 조회",
+            description = """
+                    - [학생] 사용자의 월별 운동 기록 여부를 조회합니다.
+                    - [부모] 사용자와 연결된 자식의 월별 운동 기록 여부를 조회합니다.
+                    """
+    )
     @GetMapping("/monthly")
     public ResponseEntity<MonthDailyFlagsResponse> monthDailyFlagsList(@RequestParam int year, @RequestParam int month) {
         MonthDailyFlagsResponse result = recordService.findMonthDailyFlagsList(year, month);

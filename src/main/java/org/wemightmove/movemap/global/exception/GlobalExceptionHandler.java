@@ -24,4 +24,16 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(errorDto, HttpStatusCode.valueOf(e.getErrorCode().getStatus()));
     }
+
+    @ExceptionHandler({Exception.class})
+    protected ResponseEntity<ErrorDto> handleCustomException(Exception e, HttpServletRequest request) {
+        ErrorDto errorDto = ErrorDto.builder()
+                .timestamp(LocalDateTime.now().toString())
+                .status(400)
+                .code(400)
+                .message(e.getLocalizedMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(errorDto, HttpStatusCode.valueOf(400));
+    }
 }
