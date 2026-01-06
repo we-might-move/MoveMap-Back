@@ -47,6 +47,9 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
         int failed = 0;
         int discarded = 0;
 
+        // 실패한 메시지들을 모아서 루프 끝난 후 한번에 requeue (같은 실행에서 중복 처리 방지)
+        java.util.List<FailedPushMessageResponse> toRequeue = new java.util.ArrayList<>();
+
         while (processed < batchSize) {
             FailedPushMessageResponse failedPush = failedNotificationService.popFailedPush();
 
@@ -68,9 +71,14 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
             if (sent) {
                 success++;
             } else {
-                failedNotificationService.requeueFailedPush(failedPush);
+                toRequeue.add(failedPush);
                 failed++;
             }
+        }
+
+        // 실패한 메시지들 requeue (루프 끝난 후)
+        for (FailedPushMessageResponse failedPush : toRequeue) {
+            failedNotificationService.requeueFailedPush(failedPush);
         }
 
         log.info("실패한 푸시 재시도 완료 - 처리: {}, 성공: {}, 실패: {}, 폐기: {}",
