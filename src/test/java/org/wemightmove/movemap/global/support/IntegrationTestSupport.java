@@ -7,7 +7,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.wemightmove.movemap.global.config.TestConfig;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
 @AutoConfigureMockMvc(addFilters = false)
 @Import(TestConfig.class)
 public abstract class IntegrationTestSupport {
