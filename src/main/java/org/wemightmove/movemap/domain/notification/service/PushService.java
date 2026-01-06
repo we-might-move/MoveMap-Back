@@ -8,6 +8,4 @@ import org.wemightmove.movemap.global.exception.FcmRetryableException;
 
 public interface PushService {
     void sendToMember(Long memberId, PushMessageResponse pushMessageResponse);
-    void sendWithRetry(Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse);
-    void recoverFailedPush(RuntimeException e, Long memberId, String token, DeviceType deviceType, PushMessageResponse pushMessageResponse);
 }

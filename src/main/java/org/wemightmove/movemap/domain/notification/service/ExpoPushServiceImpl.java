@@ -1,4 +1,3 @@
-// ExpoPushServiceImpl.java
 package org.wemightmove.movemap.domain.notification.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,13 +28,7 @@ import java.util.List;
 public class ExpoPushServiceImpl implements PushService {
 
     private final NotificationRepository notificationRepository;
-    private final FailedNotificationService failedNotificationService;
-    private final NotificationService notificationService;
-    private final OkHttpClient expoHttpClient;
-    private final ObjectMapper objectMapper;
-
-    private static final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private final PushSenderService pushSenderService;
 
     @Override
     @Async("pushExecutor")
@@ -48,123 +41,7 @@ public class ExpoPushServiceImpl implements PushService {
         }
 
         for (Notification device : devices) {
-            sendWithRetry(memberId, device.getFcmToken(), device.getDeviceType(), pushMessageResponse);
+            pushSenderService.sendWithRetry(memberId, device.getFcmToken(), device.getDeviceType(), pushMessageResponse);
         }
-    }
-
-    /**
-     * Expo Push 전송 (자동 재시도)
-     *
-     * @Retryable 동작
-     * 1. ExpoRetryableException 발생 시 재시도
-     * 2. 최대 3번 시도 (첫 시도 + 2번 재시도)
-     * 3. 재시도 간격: 1초 -> 2초 (exponential backoff)
-     * 4. 3번 다 실패하면 @Recover 메서드 호출
-     */
-    @Retryable(
-            retryFor = ExpoRetryableException.class,
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 1000, multiplier = 2)
-    )
-    @Override
-    public void sendWithRetry(Long memberId, String expoPushToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
-        try {
-            // Expo Push Token 유효성 검증
-            if (!isValidExpoPushToken(expoPushToken)) {
-                log.warn("유효하지 않은 Expo Push Token - memberId: {}", memberId);
-                notificationService.deleteDevice(expoPushToken);
-                throw new CustomException(ErrorCode.INVALID_FCM_TOKEN);
-            }
-
-            ExpoPushRequest request = ExpoPushRequest.of(
-                    expoPushToken,
-                    pushMessageResponse.title(),
-                    pushMessageResponse.body(),
-                    pushMessageResponse.data()
-            );
-
-            String jsonBody = objectMapper.writeValueAsString(request);
-            RequestBody body = RequestBody.create(jsonBody, JSON);
-
-            Request httpRequest = new Request.Builder()
-                    .url(EXPO_PUSH_URL)
-                    .post(body)
-                    .addHeader("Accept", "application/json")
-                    .addHeader("Content-Type", "application/json")
-                    .build();
-
-            try (Response response = expoHttpClient.newCall(httpRequest).execute()) {
-                if (!response.isSuccessful()) {
-                    throw new ExpoRetryableException(
-                            "Expo Push API 호출 실패",
-                            "HTTP_ERROR_" + response.code(),
-                            null
-                    );
-                }
-
-                String responseBody = response.body() != null ? response.body().string() : "";
-                ExpoPushResponse expoPushResponse = objectMapper.readValue(responseBody, ExpoPushResponse.class);
-
-                handleExpoPushResponse(expoPushToken, expoPushResponse);
-            }
-
-        } catch (IOException e) {
-            log.error("Expo Push 전송 중 IO 에러 - memberId: {}", memberId, e);
-            throw new ExpoRetryableException("네트워크 오류", "IO_ERROR", e);
-        }
-    }
-
-    @Recover
-    @Override
-    public void recoverFailedPush(RuntimeException e, Long memberId, String expoPushToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
-        ExpoRetryableException exception = (ExpoRetryableException) e;
-        log.error("푸시 전송 최종 실패 - memberId: {}, error: {}", memberId, exception.getErrorCode());
-        failedNotificationService.saveFailedPush(memberId, expoPushToken, deviceType, pushMessageResponse, exception.getErrorCode());
-    }
-
-    /**
-     * Expo Push Token 유효성 검증
-     * 형식: ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
-     */
-    private boolean isValidExpoPushToken(String token) {
-        if (token == null || token.isBlank()) {
-            return false;
-        }
-        return token.startsWith("ExponentPushToken[") && token.endsWith("]");
-    }
-
-    /**
-     * Expo Push 응답 처리
-     */
-    private void handleExpoPushResponse(String expoPushToken, ExpoPushResponse response) {
-        if (response.data() == null || response.data().isEmpty()) {
-            throw new ExpoRetryableException("응답 데이터 없음", "EMPTY_RESPONSE", null);
-        }
-
-        ExpoPushResponse.ExpoPushTicket ticket = response.data().get(0);
-
-        if (ticket.isSuccess()) {
-            log.info("푸시 전송 성공 - ticketId: {}", ticket.id());
-            return;
-        }
-
-        // 기기 미등록 에러 -> 토큰 삭제
-        if (ticket.isDeviceNotRegistered()) {
-            log.info("무효 토큰 삭제 - token: {}...", expoPushToken.substring(0, 30));
-            notificationService.deleteDevice(expoPushToken);
-            throw new CustomException(ErrorCode.INVALID_FCM_TOKEN);
-        }
-
-        // 재시도 가능한 에러
-        if (ticket.isRetryable()) {
-            String errorCode = ticket.details() != null ? ticket.details().error() : "UNKNOWN";
-            log.warn("Expo Push 일시 오류, 재시도 예정 - error: {}", errorCode);
-            throw new ExpoRetryableException("일시적 오류", errorCode, null);
-        }
-
-        // 기타 에러
-        String errorMsg = ticket.message() != null ? ticket.message() : "UNKNOWN_ERROR";
-        log.error("Expo Push 전송 실패 - error: {}", errorMsg);
-        throw new CustomException(ErrorCode.EXTERNAL_API_ERROR);
     }
 }
