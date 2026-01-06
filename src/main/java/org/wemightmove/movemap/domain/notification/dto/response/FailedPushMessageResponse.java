@@ -6,7 +6,7 @@ import java.util.UUID;
 public record FailedPushMessageResponse(
         String uuid,
         Long memberId,
-        String fcmToken,
+        String pushToken,
         String deviceType,
         PushMessageResponse pushMessageResponse,
         int retryCount,
@@ -17,12 +17,12 @@ public record FailedPushMessageResponse(
     /**
      * 새 실패 메시지 생성
      */
-    public static FailedPushMessageResponse create(Long memberId, String fcmToken, String deviceType,
+    public static FailedPushMessageResponse create(Long memberId, String pushToken, String deviceType,
                                            PushMessageResponse pushMessage, String errorCode) {
         return new FailedPushMessageResponse(
                 UUID.randomUUID().toString(),
                 memberId,
-                fcmToken,
+                pushToken,
                 deviceType,
                 pushMessage,
                 0,
@@ -39,7 +39,7 @@ public record FailedPushMessageResponse(
         return new FailedPushMessageResponse(
                 this.uuid,
                 this.memberId,
-                this.fcmToken,
+                this.pushToken,
                 this.deviceType,
                 this.pushMessageResponse,
                 this.retryCount + 1,

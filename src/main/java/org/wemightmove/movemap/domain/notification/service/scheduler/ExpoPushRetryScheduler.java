@@ -1,4 +1,3 @@
-// PushRetrySchedulerImpl.java (수정)
 package org.wemightmove.movemap.domain.notification.service.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,9 +16,9 @@ import org.wemightmove.movemap.domain.notification.repository.NotificationReposi
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
+public class ExpoPushRetryScheduler implements PushRetryScheduler {
 
-    private final FailedNotificationService failedNotificationService;
+    private final PushRetryQueueService pushRetryQueueService;
     private final NotificationRepository notificationRepository;
     private final OkHttpClient expoHttpClient;
     private final ObjectMapper objectMapper;
@@ -36,7 +35,7 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
     @Scheduled(fixedDelayString = "${push.retry.schedule-rate:300000}")
     @Override
     public void retryFailedPushMessages() {
-        long queueSize = failedNotificationService.getQueueSize();
+        long queueSize = pushRetryQueueService.getQueueSize();
 
         if (queueSize == 0) return;
 
@@ -51,7 +50,7 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
         java.util.List<FailedPushMessageResponse> toRequeue = new java.util.ArrayList<>();
 
         while (processed < batchSize) {
-            FailedPushMessageResponse failedPush = failedNotificationService.popFailedPush();
+            FailedPushMessageResponse failedPush = pushRetryQueueService.popFailedPush();
 
             if (failedPush == null) break;
 
@@ -78,7 +77,7 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
 
         // 실패한 메시지들 requeue (루프 끝난 후)
         for (FailedPushMessageResponse failedPush : toRequeue) {
-            failedNotificationService.requeueFailedPush(failedPush);
+            pushRetryQueueService.requeueFailedPush(failedPush);
         }
 
         log.info("실패한 푸시 재시도 완료 - 처리: {}, 성공: {}, 실패: {}, 폐기: {}",
@@ -90,7 +89,7 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
             PushMessageResponse pushMessage = failedPush.pushMessageResponse();
 
             ExpoPushRequest request = ExpoPushRequest.of(
-                    failedPush.fcmToken(), // 실제로는 expoPushToken
+                    failedPush.pushToken(),
                     pushMessage.title(),
                     pushMessage.body(),
                     pushMessage.data()
@@ -131,8 +130,8 @@ public class ExpoPushRetrySchedulerImpl implements PushRetryScheduler {
                 // 토큰 무효 -> 삭제
                 if (ticket.isDeviceNotRegistered()) {
                     log.info("재시도 중 무효 토큰 발견, 삭제 - token: {}...",
-                            failedPush.fcmToken().substring(0, 30));
-                    notificationRepository.deleteByFcmToken(failedPush.fcmToken());
+                            failedPush.pushToken().substring(0, 30));
+                    notificationRepository.deleteByFcmToken(failedPush.pushToken());
                     return true; // 큐에 다시 안 넣음
                 }
 

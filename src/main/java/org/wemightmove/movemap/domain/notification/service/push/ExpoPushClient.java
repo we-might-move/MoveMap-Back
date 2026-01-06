@@ -11,19 +11,19 @@ import org.springframework.stereotype.Service;
 import org.wemightmove.movemap.domain.notification.dto.request.ExpoPushRequest;
 import org.wemightmove.movemap.domain.notification.dto.response.ExpoPushResponse;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
+import org.wemightmove.movemap.domain.notification.service.scheduler.PushRetryQueueService;
 import org.wemightmove.movemap.global.enums.DeviceType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.exception.ExpoRetryableException;
 import org.wemightmove.movemap.domain.notification.service.NotificationService;
-import org.wemightmove.movemap.domain.notification.service.scheduler.FailedNotificationService;
 
 import java.io.IOException;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ExpoPushSenderServiceImpl implements PushSenderService {
+public class ExpoPushClient implements PushClient {
 
     // 상수
     private static final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -32,7 +32,7 @@ public class ExpoPushSenderServiceImpl implements PushSenderService {
     private final OkHttpClient expoHttpClient;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
-    private final FailedNotificationService failedNotificationService;
+    private final PushRetryQueueService pushRetryQueueService;
 
     /**
      * Expo Push 전송 (자동 재시도)
@@ -105,7 +105,7 @@ public class ExpoPushSenderServiceImpl implements PushSenderService {
     public void recoverRetryableException(
             ExpoRetryableException e,  // ← 구체적인 예외 타입!
             Long memberId,
-            String expoPushToken,
+            String pushToken,
             DeviceType deviceType,
             PushMessageResponse pushMessageResponse) {
 
@@ -113,8 +113,8 @@ public class ExpoPushSenderServiceImpl implements PushSenderService {
                 memberId, e.getErrorCode());
 
         // Redis에 저장 → 배치로 재시도
-        failedNotificationService.saveFailedPush(
-                memberId, expoPushToken, deviceType, pushMessageResponse, e.getErrorCode());
+        pushRetryQueueService.saveFailedPush(
+                memberId, pushToken, deviceType, pushMessageResponse, e.getErrorCode());
     }
 
     /**
@@ -127,7 +127,7 @@ public class ExpoPushSenderServiceImpl implements PushSenderService {
     public void recoverNonRetryableException(
             Exception e,  // ← 모든 예외 포괄
             Long memberId,
-            String expoPushToken,
+            String pushToken,
             DeviceType deviceType,
             PushMessageResponse pushMessageResponse) {
 

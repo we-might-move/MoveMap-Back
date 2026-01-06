@@ -11,8 +11,8 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlGroup;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
-import org.wemightmove.movemap.domain.notification.service.push.PushService;
-import org.wemightmove.movemap.domain.notification.service.scheduler.FailedNotificationService;
+import org.wemightmove.movemap.domain.notification.service.push.PushNotificationService;
+import org.wemightmove.movemap.domain.notification.service.scheduler.PushRetryQueueService;
 import org.wemightmove.movemap.domain.notification.service.scheduler.PushRetryScheduler;
 import org.wemightmove.movemap.global.support.IntegrationTestSupport;
 
@@ -28,13 +28,13 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
         @Sql(value = "/sql/notification-test-data.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD),
         @Sql(value = "/sql/delete-all-data.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 })
-class PushServiceIntegrationTest extends IntegrationTestSupport {
+class PushNotificationServiceIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
-    private PushService pushService;
+    private PushNotificationService pushNotificationService;
 
     @Autowired
-    private FailedNotificationService failedNotificationService;
+    private PushRetryQueueService pushRetryQueueService;
 
     @Autowired
     private PushRetryScheduler pushRetryScheduler;
@@ -83,7 +83,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         mockExpoSuccessResponse();
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then - 비동기이므로 대기
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -91,7 +91,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         });
 
         // Redis 큐에 저장 안됨 (성공했으니까)
-        assertThat(failedNotificationService.getQueueSize()).isZero();
+        assertThat(pushRetryQueueService.getQueueSize()).isZero();
     }
 
     @Test
@@ -101,7 +101,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         PushMessageResponse message = PushMessageResponse.inviteResponse("테스트", "code");
 
         // when
-        pushService.sendToMember(memberIdWithNoDevice, message);
+        pushNotificationService.sendToMember(memberIdWithNoDevice, message);
 
         // then - API 호출 없음
         await().during(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -116,7 +116,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         PushMessageResponse message = PushMessageResponse.inviteResponse("테스트", "code");
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then
         await().during(2, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -136,14 +136,14 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         mockExpoRetryableErrorResponse();
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then - 3회 재시도 후 Redis에 저장 (약 1초+2초 대기)
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             // @Retryable: 3회 시도
             verify(expoHttpClient, atLeast(3)).newCall(any(Request.class));
             // @Recover: Redis에 저장됨
-            assertThat(failedNotificationService.getQueueSize()).isGreaterThan(0);
+            assertThat(pushRetryQueueService.getQueueSize()).isGreaterThan(0);
         });
     }
 
@@ -156,7 +156,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         mockExpoSuccessResponse();
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then - API 1회만 호출 (재시도 없음)
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -164,7 +164,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
             verify(expoHttpClient, atMost(2)).newCall(any(Request.class));
         });
 
-        assertThat(failedNotificationService.getQueueSize()).isZero();
+        assertThat(pushRetryQueueService.getQueueSize()).isZero();
     }
 
     @Test
@@ -177,12 +177,12 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         when(mockCall.execute()).thenReturn(createResponse(500, "Internal Server Error"));
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             verify(expoHttpClient, atLeast(3)).newCall(any(Request.class));
-            assertThat(failedNotificationService.getQueueSize()).isGreaterThan(0);
+            assertThat(pushRetryQueueService.getQueueSize()).isGreaterThan(0);
         });
     }
 
@@ -196,12 +196,12 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         when(mockCall.execute()).thenThrow(new IOException("Connection refused"));
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             verify(expoHttpClient, atLeast(3)).newCall(any(Request.class));
-            assertThat(failedNotificationService.getQueueSize()).isGreaterThan(0);
+            assertThat(pushRetryQueueService.getQueueSize()).isGreaterThan(0);
         });
     }
 
@@ -218,7 +218,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         long initialDeviceCount = notificationRepository.findByMemberIdAndIsPushEnabledTrue(memberId).size();
 
         // when
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // then - 토큰 삭제됨
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -236,11 +236,11 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         PushMessageResponse message = PushMessageResponse.inviteResponse("테스트", "code");
 
         mockExpoRetryableErrorResponse();
-        pushService.sendToMember(memberId, message);
+        pushNotificationService.sendToMember(memberId, message);
 
         // Redis에 저장될 때까지 대기
         await().atMost(10, TimeUnit.SECONDS).until(() ->
-                failedNotificationService.getQueueSize() > 0
+                pushRetryQueueService.getQueueSize() > 0
         );
 
         // 이제 성공 응답으로 변경
@@ -253,19 +253,19 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         pushRetryScheduler.retryFailedPushMessages();
 
         // then - 큐 비어있음 (성공)
-        assertThat(failedNotificationService.getQueueSize()).isZero();
+        assertThat(pushRetryQueueService.getQueueSize()).isZero();
     }
 
     @Test
     void 스케줄러_재시도_실패_시_다시_큐에_추가된다() throws Exception {
         // given - Redis에 직접 저장
         PushMessageResponse message = PushMessageResponse.inviteResponse("테스트", "code");
-        failedNotificationService.saveFailedPush(
+        pushRetryQueueService.saveFailedPush(
                 1L, "ExponentPushToken[xxx]",
                 org.wemightmove.movemap.global.enums.DeviceType.ANDROID,
                 message, "ERROR"
         );
-        assertThat(failedNotificationService.getQueueSize()).isEqualTo(1);
+        assertThat(pushRetryQueueService.getQueueSize()).isEqualTo(1);
 
         mockExpoRetryableErrorResponse();
 
@@ -273,10 +273,10 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         pushRetryScheduler.retryFailedPushMessages();
 
         // then - 실패하여 다시 큐에 추가됨
-        assertThat(failedNotificationService.getQueueSize()).isEqualTo(1);
+        assertThat(pushRetryQueueService.getQueueSize()).isEqualTo(1);
 
         // retryCount 증가 확인
-        var requeued = failedNotificationService.popFailedPush();
+        var requeued = pushRetryQueueService.popFailedPush();
         assertThat(requeued.retryCount()).isEqualTo(1);
     }
 
@@ -286,15 +286,15 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         PushMessageResponse message = PushMessageResponse.inviteResponse("테스트", "code");
 
         // 5번 실패 시뮬레이션
-        failedNotificationService.saveFailedPush(
+        pushRetryQueueService.saveFailedPush(
                 1L, "ExponentPushToken[xxx]",
                 org.wemightmove.movemap.global.enums.DeviceType.ANDROID,
                 message, "ERROR"
         );
 
         for (int i = 0; i < 5; i++) {
-            var failed = failedNotificationService.popFailedPush();
-            failedNotificationService.requeueFailedPush(failed);
+            var failed = pushRetryQueueService.popFailedPush();
+            pushRetryQueueService.requeueFailedPush(failed);
         }
 
         mockExpoRetryableErrorResponse();
@@ -303,7 +303,7 @@ class PushServiceIntegrationTest extends IntegrationTestSupport {
         pushRetryScheduler.retryFailedPushMessages();
 
         // then - 폐기되어 큐가 비어있음
-        assertThat(failedNotificationService.getQueueSize()).isZero();
+        assertThat(pushRetryQueueService.getQueueSize()).isZero();
     }
 
     @Test

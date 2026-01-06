@@ -15,7 +15,7 @@ import java.time.Duration;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FailedNotificationServiceImpl implements FailedNotificationService {
+public class RedisPushRetryQueue implements PushRetryQueueService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -25,10 +25,10 @@ public class FailedNotificationServiceImpl implements FailedNotificationService 
 
     // 실패한 푸시 저장
     @Override
-    public void saveFailedPush(Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse, String errorCode) {
+    public void saveFailedPush(Long memberId, String pushToken, DeviceType deviceType, PushMessageResponse pushMessageResponse, String errorCode) {
         try {
             FailedPushMessageResponse failed = FailedPushMessageResponse.create(
-                    memberId, fcmToken, deviceType.name(), pushMessageResponse, errorCode
+                    memberId, pushToken, deviceType.name(), pushMessageResponse, errorCode
             );
 
             String json = objectMapper.writeValueAsString(failed);

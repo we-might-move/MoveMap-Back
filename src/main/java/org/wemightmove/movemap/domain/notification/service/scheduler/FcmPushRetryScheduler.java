@@ -4,7 +4,6 @@ import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.wemightmove.movemap.domain.notification.dto.response.FailedPushMessageResponse;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
@@ -13,9 +12,9 @@ import org.springframework.beans.factory.annotation.Value;
 @Slf4j
 //@Component
 @RequiredArgsConstructor
-public class PushRetrySchedulerImpl implements PushRetryScheduler {
+public class FcmPushRetryScheduler implements PushRetryScheduler {
 
-    private final FailedNotificationService failedNotificationService;
+    private final PushRetryQueueService pushRetryQueueService;
     private final NotificationRepository notificationRepository;
 
     @Value("${push.retry.max-attempts:5}")
@@ -31,7 +30,7 @@ public class PushRetrySchedulerImpl implements PushRetryScheduler {
     @Scheduled(fixedDelayString = "${push.retry.schedule-rate:300000}")
     @Override
     public void retryFailedPushMessages() {
-        long queueSize = failedNotificationService.getQueueSize();
+        long queueSize = pushRetryQueueService.getQueueSize();
 
         if (queueSize == 0) return;
 
@@ -43,7 +42,7 @@ public class PushRetrySchedulerImpl implements PushRetryScheduler {
         int discarded = 0;
 
         while (processed < batchSize) {
-            FailedPushMessageResponse failedPush = failedNotificationService.popFailedPush();
+            FailedPushMessageResponse failedPush = pushRetryQueueService.popFailedPush();
 
             if (failedPush == null) {
                 break;
@@ -66,7 +65,7 @@ public class PushRetrySchedulerImpl implements PushRetryScheduler {
                 success++;
             } else {
                 // 실패하면 다시 큐에
-                failedNotificationService.requeueFailedPush(failedPush);
+                pushRetryQueueService.requeueFailedPush(failedPush);
                 failed++;
             }
         }
@@ -82,7 +81,7 @@ public class PushRetrySchedulerImpl implements PushRetryScheduler {
             PushMessageResponse pushMessage = failedPush.pushMessageResponse();
 
             Message message = Message.builder()
-                    .setToken(failedPush.fcmToken())
+                    .setToken(failedPush.pushToken())
                     .setNotification(Notification.builder()
                             .setTitle(pushMessage.title())
                             .setBody(pushMessage.body())
@@ -103,9 +102,9 @@ public class PushRetrySchedulerImpl implements PushRetryScheduler {
             // 토큰 무효 → 삭제, 재시도 안 함
             if (errorCode == MessagingErrorCode.UNREGISTERED ||
                     errorCode == MessagingErrorCode.INVALID_ARGUMENT) {
-                log.info("재시도 중 무효 토큰 발견, 삭제 - fcmToken: {}...",
-                        failedPush.fcmToken().substring(0, 20));
-                notificationRepository.deleteByFcmToken(failedPush.fcmToken());
+                log.info("재시도 중 무효 토큰 발견, 삭제 - token: {}...",
+                        failedPush.pushToken().substring(0, 20));
+                notificationRepository.deleteByFcmToken(failedPush.pushToken());
                 return true;  // 큐에 다시 안 넣음
             }
 

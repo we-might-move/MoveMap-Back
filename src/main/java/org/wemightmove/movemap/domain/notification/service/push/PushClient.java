@@ -4,7 +4,7 @@ import org.wemightmove.movemap.domain.notification.dto.response.PushMessageRespo
 import org.wemightmove.movemap.global.enums.DeviceType;
 import org.wemightmove.movemap.global.exception.ExpoRetryableException;
 
-public interface PushSenderService {
+public interface PushClient {
     void sendWithRetry(Long memberId, String pushToken, DeviceType deviceType, PushMessageResponse messageResponse);
     void recoverRetryableException(ExpoRetryableException e, Long memberId, String pushToken, DeviceType deviceType, PushMessageResponse messageResponse);
     void recoverNonRetryableException(Exception e, Long memberId, String pushToken, DeviceType deviceType, PushMessageResponse messageResponse);

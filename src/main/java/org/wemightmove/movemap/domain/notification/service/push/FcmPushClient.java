@@ -6,22 +6,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
-import org.springframework.stereotype.Service;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
+import org.wemightmove.movemap.domain.notification.service.scheduler.PushRetryQueueService;
 import org.wemightmove.movemap.global.enums.DeviceType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.exception.ExpoRetryableException;
 import org.wemightmove.movemap.global.exception.FcmRetryableException;
 import org.wemightmove.movemap.domain.notification.service.NotificationService;
-import org.wemightmove.movemap.domain.notification.service.scheduler.FailedNotificationService;
 
 @Slf4j
 //@Service
 @RequiredArgsConstructor
-public class FcmPushSenderServiceImpl implements PushSenderService {
+public class FcmPushClient implements PushClient {
 
-    private final FailedNotificationService failedNotificationService;
+    private final PushRetryQueueService pushRetryQueueService;
     private final NotificationService notificationService;
 
     /**
@@ -39,14 +38,14 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
             backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     @Override
-    public void sendWithRetry(Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
+    public void sendWithRetry(Long memberId, String pushToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
         try {
-            Message message = buildMessage(fcmToken, deviceType, pushMessageResponse);
+            Message message = buildMessage(pushToken, deviceType, pushMessageResponse);
             String response = FirebaseMessaging.getInstance().send(message);
 
             log.info("푸시 전송 성공 - messageId : {}", response);
         } catch (FirebaseMessagingException e) {
-            handleFcmException(fcmToken, e);
+            handleFcmException(pushToken, e);
         }
     }
 
@@ -59,14 +58,14 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
     public void recoverRetryableException(
             ExpoRetryableException e,  // ← 구체적인 예외 타입!
             Long memberId,
-            String fcmToken,
+            String pushToken,
             DeviceType deviceType,
             PushMessageResponse pushMessageResponse) {
 
         log.error("푸시 전송 최종 실패 (재시도 소진) - memberId: {}, error: {}",
                 memberId, e.getErrorCode());
 
-        failedNotificationService.saveFailedPush(memberId, fcmToken, deviceType, pushMessageResponse, e.getErrorCode());
+        pushRetryQueueService.saveFailedPush(memberId, pushToken, deviceType, pushMessageResponse, e.getErrorCode());
     }
 
     /**
@@ -79,7 +78,7 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
     public void recoverNonRetryableException(
             Exception e,  // ← 모든 예외 포괄
             Long memberId,
-            String fcmToken,
+            String pushToken,
             DeviceType deviceType,
             PushMessageResponse pushMessageResponse) {
 
@@ -90,9 +89,9 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
     }
 
     // FCM 메시지 생성
-    private Message buildMessage(String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
+    private Message buildMessage(String pushToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
         Message.Builder builder = Message.builder()
-                .setToken(fcmToken)
+                .setToken(pushToken)
                 .setNotification(com.google.firebase.messaging.Notification.builder()
                         .setTitle(pushMessageResponse.title())
                         .setBody(pushMessageResponse.body()).build())
@@ -122,14 +121,14 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
      * 재시도 가능: UNAVAILABLE, INTERNAL, UNKNOWN 등 (일시적 오류)
      * 재시도 불가: UNREGISTERED, INVALID_ARGUMENT 등 (영구적 오류)
      */
-    private void handleFcmException(String fcmToken, FirebaseMessagingException e) {
+    private void handleFcmException(String pushToken, FirebaseMessagingException e) {
         MessagingErrorCode errorCode = e.getMessagingErrorCode();
         String errorCodeStr = errorCode != null ? errorCode.name() : "UNKNOWN";
 
         // 재시도 불가능 에러
         if (isImpossibleError(errorCode)) {
             log.info("무효 토큰 삭제 - errorCode : {}", errorCodeStr);
-            notificationService.deleteDevice(fcmToken);
+            notificationService.deleteDevice(pushToken);
 
             // 재시도 안 함
             throw new CustomException(ErrorCode.INVALID_FCM_TOKEN);

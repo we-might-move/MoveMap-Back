@@ -19,7 +19,7 @@ import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
-import org.wemightmove.movemap.domain.notification.service.push.PushService;
+import org.wemightmove.movemap.domain.notification.service.push.PushNotificationService;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
@@ -48,7 +48,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
     private final RegionTypeRepository regionTypeRepository;
 
     // 알림 전송 서비스
-    private final PushService pushService;
+    private final PushNotificationService pushNotificationService;
 
     @Value("${invite.expiration-days:3}")
     private long inviteExpirationDays;
@@ -109,7 +109,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
                 parent.getNickname(),
                 child.getUuid()
         );
-        pushService.sendToMember(child.getId(), message);
+        pushNotificationService.sendToMember(child.getId(), message);
 
         return new SendInviteResponse(child.getId(), child.getNickname());
     }
@@ -142,7 +142,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
         // 초대 수락 알림 전송
         PushMessageResponse pushMessageResponse = PushMessageResponse.invitedAccepted(child.getNickname());
-        pushService.sendToMember(parent.getId(), pushMessageResponse);
+        pushNotificationService.sendToMember(parent.getId(), pushMessageResponse);
 
         return new AcceptInvitationResponse(saved.getParent().getId(), saved.getParent().getNickname(), saved.getParent().getRole().name());
     }
@@ -166,7 +166,7 @@ public class MemberCommandServiceImpl implements MemberCommandService {
 
         // 초대 거절 알림 전송
         PushMessageResponse pushMessageResponse = PushMessageResponse.inviteRejected(child.getNickname());
-        pushService.sendToMember(parentId, pushMessageResponse);
+        pushNotificationService.sendToMember(parentId, pushMessageResponse);
     }
 
     @Override

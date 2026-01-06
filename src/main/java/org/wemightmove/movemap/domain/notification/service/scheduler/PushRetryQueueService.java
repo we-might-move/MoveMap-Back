@@ -4,8 +4,8 @@ import org.wemightmove.movemap.domain.notification.dto.response.FailedPushMessag
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.global.enums.DeviceType;
 
-public interface FailedNotificationService {
-    void saveFailedPush(Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse, String errorCode);
+public interface PushRetryQueueService {
+    void saveFailedPush(Long memberId, String pushToken, DeviceType deviceType, PushMessageResponse pushMessageResponse, String errorCode);
     FailedPushMessageResponse popFailedPush();
     void requeueFailedPush(FailedPushMessageResponse failedPushMessageResponse);
     long getQueueSize();
