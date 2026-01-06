@@ -47,12 +47,44 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
         }
     }
 
+    /**
+     * 재시도 가능한 예외용 @Recover (FcmRetryableException)
+     * - 3회 재시도 후에도 실패한 경우
+     * - Redis 큐에 저장하여 나중에 배치로 재시도
+     */
     @Recover
-    @Override
-    public void recoverFailedPush(RuntimeException e, Long memberId, String fcmToken, DeviceType deviceType, PushMessageResponse pushMessageResponse) {
-        log.error("푸시 전송 최종 실패");
-        FcmRetryableException exception = (FcmRetryableException) e;
-        failedNotificationService.saveFailedPush(memberId, fcmToken, deviceType, pushMessageResponse, exception.getErrorCode());
+    public void recoverRetryableException(
+            FcmRetryableException e,
+            Long memberId,
+            String fcmToken,
+            DeviceType deviceType,
+            PushMessageResponse pushMessageResponse) {
+
+        log.error("푸시 전송 최종 실패 (재시도 소진) - memberId: {}, error: {}",
+                memberId, e.getErrorCode());
+
+        failedNotificationService.saveFailedPush(
+                memberId, fcmToken, deviceType, pushMessageResponse, e.getErrorCode());
+    }
+
+    /**
+     * 재시도 불가능한 예외용 @Recover (그 외 모든 예외)
+     * - CustomException: 토큰 무효, 영구적 오류
+     * - NullPointerException: 코드 버그
+     * - Redis 저장 안함 (재시도 의미 없음)
+     */
+    @Recover
+    public void recoverNonRetryableException(
+            Exception e,
+            Long memberId,
+            String fcmToken,
+            DeviceType deviceType,
+            PushMessageResponse pushMessageResponse) {
+
+        log.warn("푸시 전송 실패 (재시도 불가) - memberId: {}, type: {}, message: {}",
+                memberId, e.getClass().getSimpleName(), e.getMessage());
+
+        // Redis에 저장하지 않음 (재시도 의미 없음)
     }
 
     // FCM 메시지 생성
