@@ -60,6 +60,9 @@ dependencies {
     testImplementation 'com.redis.testcontainers:testcontainers-redis:1.6.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // 비동기 테스트용 (await 사용)
+    testImplementation 'org.awaitility:awaitility:4.2.0'
+
     // Testcontainers BOM (버전 통합 관리)
     testImplementation platform('org.testcontainers:testcontainers-bom:1.19.8')
     testImplementation 'org.testcontainers:testcontainers'
