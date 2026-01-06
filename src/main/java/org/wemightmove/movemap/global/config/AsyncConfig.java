@@ -1,6 +1,7 @@
 package org.wemightmove.movemap.global.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -23,6 +24,7 @@ public class AsyncConfig {
      * - queueCapacity : 100 (대기열)
      */
     @Bean(name = "pushExecutor")
+    @ConditionalOnMissingBean(name = "pushExecutor")
     public Executor pushExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
