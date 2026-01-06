@@ -1,4 +1,4 @@
-package org.wemightmove.movemap.domain.notification.service;
+package org.wemightmove.movemap.domain.notification.service.push;
 
 import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,10 @@ import org.wemightmove.movemap.domain.notification.dto.response.PushMessageRespo
 import org.wemightmove.movemap.global.enums.DeviceType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
+import org.wemightmove.movemap.global.exception.ExpoRetryableException;
 import org.wemightmove.movemap.global.exception.FcmRetryableException;
+import org.wemightmove.movemap.domain.notification.service.NotificationService;
+import org.wemightmove.movemap.domain.notification.service.scheduler.FailedNotificationService;
 
 @Slf4j
 //@Service
@@ -48,13 +51,13 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
     }
 
     /**
-     * 재시도 가능한 예외용 @Recover (FcmRetryableException)
+     * 재시도 가능한 예외용 @Recover (ExpoRetryableException)
      * - 3회 재시도 후에도 실패한 경우
      * - Redis 큐에 저장하여 나중에 배치로 재시도
      */
     @Recover
     public void recoverRetryableException(
-            FcmRetryableException e,
+            ExpoRetryableException e,  // ← 구체적인 예외 타입!
             Long memberId,
             String fcmToken,
             DeviceType deviceType,
@@ -63,8 +66,7 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
         log.error("푸시 전송 최종 실패 (재시도 소진) - memberId: {}, error: {}",
                 memberId, e.getErrorCode());
 
-        failedNotificationService.saveFailedPush(
-                memberId, fcmToken, deviceType, pushMessageResponse, e.getErrorCode());
+        failedNotificationService.saveFailedPush(memberId, fcmToken, deviceType, pushMessageResponse, e.getErrorCode());
     }
 
     /**
@@ -75,7 +77,7 @@ public class FcmPushSenderServiceImpl implements PushSenderService {
      */
     @Recover
     public void recoverNonRetryableException(
-            Exception e,
+            Exception e,  // ← 모든 예외 포괄
             Long memberId,
             String fcmToken,
             DeviceType deviceType,

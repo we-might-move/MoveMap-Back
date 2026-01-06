@@ -1,4 +1,4 @@
-package org.wemightmove.movemap.domain.notification.service;
+package org.wemightmove.movemap.domain.notification.service.push;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,8 @@ import org.wemightmove.movemap.global.enums.DeviceType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.exception.ExpoRetryableException;
+import org.wemightmove.movemap.domain.notification.service.NotificationService;
+import org.wemightmove.movemap.domain.notification.service.scheduler.FailedNotificationService;
 
 import java.io.IOException;
 

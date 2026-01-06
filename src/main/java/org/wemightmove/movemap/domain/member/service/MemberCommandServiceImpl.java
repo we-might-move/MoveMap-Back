@@ -19,7 +19,7 @@ import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.member.repository.ParentChildRepository;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;
 import org.wemightmove.movemap.domain.notification.repository.NotificationRepository;
-import org.wemightmove.movemap.domain.notification.service.PushService;
+import org.wemightmove.movemap.domain.notification.service.push.PushService;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;

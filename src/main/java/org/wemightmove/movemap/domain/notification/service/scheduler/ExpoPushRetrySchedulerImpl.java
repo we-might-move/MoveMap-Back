@@ -1,5 +1,5 @@
 // PushRetrySchedulerImpl.java (수정)
-package org.wemightmove.movemap.domain.notification.service;
+package org.wemightmove.movemap.domain.notification.service.scheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

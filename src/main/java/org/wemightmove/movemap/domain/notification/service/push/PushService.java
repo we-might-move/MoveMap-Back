@@ -1,4 +1,4 @@
-package org.wemightmove.movemap.domain.notification.service;
+package org.wemightmove.movemap.domain.notification.service.push;
 
 import org.springframework.retry.annotation.Recover;
 import org.wemightmove.movemap.domain.notification.dto.response.PushMessageResponse;

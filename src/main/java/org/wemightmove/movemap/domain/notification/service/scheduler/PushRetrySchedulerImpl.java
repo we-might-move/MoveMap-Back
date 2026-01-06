@@ -1,4 +1,4 @@
-package org.wemightmove.movemap.domain.notification.service;
+package org.wemightmove.movemap.domain.notification.service.scheduler;
 
 import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
