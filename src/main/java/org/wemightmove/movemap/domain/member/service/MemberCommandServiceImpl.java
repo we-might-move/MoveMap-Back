@@ -225,6 +225,9 @@ public class MemberCommandServiceImpl implements MemberCommandService {
             validateNicknameDuplication(updateMemberRequest.nickname(), memberId);
         }
 
+        /**
+         * TODO : region 관련 기능들 util 로 만들기
+         */
         // 2. 지역 정보 원자성 검증
         if (!updateMemberRequest.isValidRegionUpdate()) {
             throw new CustomException(ErrorCode.INVALID_REGION_UPDATE);
