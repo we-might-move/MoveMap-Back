@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.wemightmove.movemap.global.client.KakaoClient;
 
 import static org.mockito.Mockito.mock;
 
@@ -23,5 +24,11 @@ public class TestConfig {
     @Primary
     public FirebaseMessaging firebaseMessaging() {
         return mock(FirebaseMessaging.class);
+    }
+
+    @Bean
+    @Primary
+    public KakaoClient kakaoClient() {
+        return mock(KakaoClient.class);
     }
 }
