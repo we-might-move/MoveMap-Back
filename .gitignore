@@ -55,3 +55,4 @@ src/main/resources/application-firebase.yml
 docker-compose.yml
 postgres-data
 Dockerfile
+.superpowers/

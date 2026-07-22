@@ -1,0 +1,79 @@
+# ============================================================
+# 성능 측정 전용 프로파일 (P1) — 자급자족(self-contained)
+# ------------------------------------------------------------
+# 로컬에 application-develop.yml(시크릿)이 없어서 이 파일이 부팅에 필요한 모든 값을
+# 더미로 채운다. 카카오/메일/파이어베이스 등 외부연동은 동작하지 않지만,
+# 검색·로그인(email/password) 등 측정에 필요한 경로는 동작한다.
+#
+# 실행:
+#   - 네이티브:  ./gradlew bootRun --args='--spring.profiles.active=perf'
+#   - 컨테이너:  perf/docker-compose.yml 의 app 서비스 (SPRING_* env로 host override)
+#
+# ⚠️ 더미 시크릿이다. 실제 배포 설정으로 쓰지 말 것.
+# ============================================================
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/movemap     # 컨테이너: SPRING_DATASOURCE_URL env로 override
+    username: movemap
+    password: movemap
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none          # 스키마는 Flyway가 생성
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  data:
+    redis:
+      host: localhost         # 컨테이너: SPRING_DATA_REDIS_HOST env로 override
+      port: 6379
+
+jwt:
+  secret: "movemap-perf-dummy-secret-key-please-change-0123456789abcdef"   # HS256용 >=32 bytes
+  access-token-validity: 3600000        # 1h (ms)
+  refresh-token-validity: 1209600000    # 14d (ms)
+
+kakao:
+  client-id: dummy-client-id
+  redirect-uri: http://localhost:8080/auth/kakao
+  token-uri: https://kauth.kakao.com/oauth/token
+  user-info-uri: https://kapi.kakao.com/v2/user/me
+
+mail:
+  host: localhost
+  port: 1025
+  username: dummy@perf.local
+  password: dummy
+  templates:
+    path: templates/mail
+    img:
+      logo: logo.png
+
+firebase:
+  config-path: firebase/dummy-service-account.json   # FirebaseConfig는 @Configuration 주석 처리(미사용)
+
+invite:
+  expiration-days: 7
+
+push:
+  retry:
+    batch-size: 100
+    max-attempts: 3
+    schedule-rate: 300000
+
+springdoc:
+  swagger-ui:
+    development: true
+    production: false
+
+cors:
+  allowed-origins:
+    - "http://localhost:3000"
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+    - OPTIONS
