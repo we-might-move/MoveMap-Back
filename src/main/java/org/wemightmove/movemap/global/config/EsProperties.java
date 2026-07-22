@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties(prefix = "movemap.es")
 public record EsProperties(
-        String host,
+        @DefaultValue("localhost:9200") String host,
         String username,
         String password,
         String apiKey,
