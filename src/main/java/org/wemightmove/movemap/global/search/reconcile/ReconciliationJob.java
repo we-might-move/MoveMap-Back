@@ -145,8 +145,8 @@ public class ReconciliationJob {
             }
 
             if (!toReindex.isEmpty()) {
-                bulkReindexer.bulkIndex(domain, toReindex);
-                reindexed += toReindex.size();
+                long failed = bulkReindexer.bulkIndex(domain, toReindex);
+                reindexed += toReindex.size() - failed;
             }
         }
 

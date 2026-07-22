@@ -76,8 +76,8 @@ public class BulkReindexer {
                 docs.add(mapped.doc());
                 lastId = mapped.doc().id();
             }
-            bulkIndex(domain, docs);
-            total += docs.size();
+            long failed = bulkIndex(domain, docs);
+            total += docs.size() - failed;
         }
 
         refresh(domain);
@@ -138,11 +138,12 @@ public class BulkReindexer {
 
     /**
      * 문서 목록을 concrete 인덱스로 bulk 색인(op=index, _id=PK)한다.
-     * bulk 응답의 개별 항목 실패를 검사해 ERROR 로그 + {@code search_bulk_item_failures_total} 로 표면화한다.
+     * bulk 응답의 개별 항목 실패를 검사해 ERROR 로그 + {@code search_bulk_item_failures_total} 로 표면화하고,
+     * 실패한 항목 수를 반환한다(호출부가 {@code docs.size() - 실패건수} 로 성공 건수를 집계할 수 있도록).
      */
-    public void bulkIndex(SearchDomain domain, List<? extends IndexedDoc> docs) {
+    public long bulkIndex(SearchDomain domain, List<? extends IndexedDoc> docs) {
         if (docs.isEmpty()) {
-            return;
+            return 0;
         }
         String indexName = domain.indexName();
         BulkResponse response;
@@ -161,11 +162,12 @@ public class BulkReindexer {
         }
 
         if (response.errors()) {
-            handleBulkErrors(indexName, response);
+            return handleBulkErrors(indexName, response);
         }
+        return 0;
     }
 
-    private void handleBulkErrors(String indexName, BulkResponse response) {
+    private long handleBulkErrors(String indexName, BulkResponse response) {
         long failed = 0;
         for (BulkResponseItem item : response.items()) {
             if (item.error() == null) {
@@ -177,6 +179,7 @@ public class BulkReindexer {
                     indexName, item.id(), item.status(), item.error().type(), item.error().reason());
         }
         log.error("ES bulk 부분 실패: index={}, failedItems={}", indexName, failed);
+        return failed;
     }
 
     /** 색인 직후 count 가 즉시 보이도록 refresh 한다. */
