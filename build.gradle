@@ -55,6 +55,10 @@ dependencies {
     // Elasticsearch
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 
+    // Micrometer core (검색 색인/리컨실 메트릭용). actuator 미도입 — 경량 core만 추가.
+    // 버전은 Spring Boot BOM이 관리. 실제 레지스트리(prometheus 등)는 T7/프로덕션에서 주입 가능.
+    implementation 'io.micrometer:micrometer-core'
+
     // test
     annotationProcessor 'org.projectlombok:lombok'
 

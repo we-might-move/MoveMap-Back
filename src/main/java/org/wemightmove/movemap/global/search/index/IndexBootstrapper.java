@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@Order(0) // DDL/alias 보장 → 데이터 초기 색인(InitialIndexRunner, @Order(1))보다 먼저 실행되어야 함
 @RequiredArgsConstructor
 public class IndexBootstrapper implements ApplicationRunner {
 
