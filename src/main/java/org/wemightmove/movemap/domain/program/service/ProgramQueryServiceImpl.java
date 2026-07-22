@@ -1,11 +1,14 @@
 package org.wemightmove.movemap.domain.program.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
 import org.wemightmove.movemap.domain.program.dto.ProgramItem;
+import org.wemightmove.movemap.domain.program.search.DbProgramSearchAdapter;
+import org.wemightmove.movemap.domain.program.search.EsProgramSearchAdapter;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramInitialListRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramListBySearchRequest;
 import org.wemightmove.movemap.domain.program.dto.request.ProgramMarkerRequest;
@@ -15,26 +18,36 @@ import org.wemightmove.movemap.domain.program.dto.response.ProgramListResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramMarkerResponse;
 import org.wemightmove.movemap.domain.program.dto.response.ProgramSimpleListResponse;
 import org.wemightmove.movemap.domain.program.repository.ProgramRepository;
+import org.wemightmove.movemap.global.config.SearchProperties;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.enums.WeekDayType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.search.SearchMetrics;
+import org.wemightmove.movemap.global.search.index.SearchDomain;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProgramQueryServiceImpl implements ProgramQueryService {
 
     private static final int DEFAULT_MAX_MARKERS = 10;
+    private static final String DOMAIN = SearchDomain.PROGRAM.label();
+    private static final String ENGINE_ES = "es";
 
     private final MemberRepository memberRepository;
     private final ProgramRepository programRepository;
     private final RegionTypeRepository regionTypeRepository;
+    private final SearchProperties searchProperties;
+    private final SearchMetrics searchMetrics;
+    private final EsProgramSearchAdapter esProgramSearchAdapter;
+    private final DbProgramSearchAdapter dbProgramSearchAdapter;
 
     @Override
     public ProgramMarkerResponse getMarkers(Long memberId) {
@@ -122,26 +135,23 @@ public class ProgramQueryServiceImpl implements ProgramQueryService {
 //    @Transactional(timeout = 10)
     public ProgramSimpleListResponse searchPrograms(Long memberId, ProgramSearchByKeywordRequest request) {
 
-        Member member = getMember(memberId);
+        // 멤버 검증은 엔진과 무관하게 보존(레거시 계약: 없으면 MEMBER_NOT_FOUND)
+        getMember(memberId);
 
-        String normalizedKeyword = request.normalizedKeyword();
-        int size = request.size();
+        // 엔진 스위칭 + 계측 fallback(GLOBAL §3): engine=es 면 ES 시도, 어떤 예외든 DB 로 fallback
+        if (ENGINE_ES.equalsIgnoreCase(searchProperties.program().engine())) {
+            try {
+                return searchMetrics.esLatency(DOMAIN)
+                        .record(() -> esProgramSearchAdapter.search(request));
+            } catch (Exception e) {
+                searchMetrics.esFallback(DOMAIN);
+                log.warn("ES search fallback→DB domain={} keyword_len={} cause={}",
+                        DOMAIN, request.keyword().length(), e.toString());
+                return dbProgramSearchAdapter.search(request);
+            }
+        }
 
-        // size + 1개를 조회하여 hasNext 판단
-        List<ProgramSimpleListResponse.ProgramSimpleItem> results =
-                programRepository.searchProgramsByKeyword(
-                        normalizedKeyword,
-                        request.cursor(),
-                        size + 1
-                );
-
-        // hasNext 판단 및 응답 생성
-        boolean hasNext = results.size() > size;
-        List<ProgramSimpleListResponse.ProgramSimpleItem> content = hasNext ?
-                results.subList(0, size) : results;
-        Long nextCursor = hasNext ? content.get(content.size() - 1).id() : null;
-
-        return ProgramSimpleListResponse.of(content, nextCursor, hasNext);
+        return dbProgramSearchAdapter.search(request);
     }
 
     @Override

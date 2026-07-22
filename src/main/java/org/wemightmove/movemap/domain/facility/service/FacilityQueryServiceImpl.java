@@ -13,13 +13,18 @@ import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
+import org.wemightmove.movemap.domain.facility.search.DbFacilitySearchAdapter;
+import org.wemightmove.movemap.domain.facility.search.EsFacilitySearchAdapter;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.global.config.SearchProperties;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.search.SearchMetrics;
+import org.wemightmove.movemap.global.search.index.SearchDomain;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -32,10 +37,16 @@ import java.util.List;
 public class FacilityQueryServiceImpl implements FacilityQueryService {
 
     private final static int maxResults = 100;
+    private static final String DOMAIN = SearchDomain.FACILITY.label();
+    private static final String ENGINE_ES = "es";
 
     private final FacilityRepository facilityRepository;
     private final RegionTypeRepository regionTypeRepository;
     private final MemberRepository memberRepository;
+    private final SearchProperties searchProperties;
+    private final SearchMetrics searchMetrics;
+    private final EsFacilitySearchAdapter esFacilitySearchAdapter;
+    private final DbFacilitySearchAdapter dbFacilitySearchAdapter;
 
     @Override
     public FacilityMarkerResponse getMarkers(Long memberId) {
@@ -103,12 +114,23 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
 
     @Override
     public FacilitySimpleListResponse searchFacilityListByKeyword(Long memberId, String keyword) {
-        Member member = getMember(memberId);
+        // 멤버 검증은 엔진과 무관하게 보존(레거시 계약: 없으면 MEMBER_NOT_FOUND)
+        getMember(memberId);
 
-        List<FacilitySimpleListResponse.FacilitySimpleInfo> facilities = facilityRepository.searchFacilitiesByNameAndFacilitySubtype(keyword).stream()
-                .map(FacilitySimpleListResponse.FacilitySimpleInfo::of).toList();
+        // 엔진 스위칭 + 계측 fallback(GLOBAL §3): engine=es 면 ES 시도, 어떤 예외든 DB 로 fallback
+        if (ENGINE_ES.equalsIgnoreCase(searchProperties.facility().engine())) {
+            try {
+                return searchMetrics.esLatency(DOMAIN)
+                        .record(() -> esFacilitySearchAdapter.search(keyword));
+            } catch (Exception e) {
+                searchMetrics.esFallback(DOMAIN);
+                log.warn("ES search fallback→DB domain={} keyword_len={} cause={}",
+                        DOMAIN, keyword == null ? 0 : keyword.length(), e.toString());
+                return dbFacilitySearchAdapter.search(keyword);
+            }
+        }
 
-        return new FacilitySimpleListResponse(facilities);
+        return dbFacilitySearchAdapter.search(keyword);
     }
 
     @Override
