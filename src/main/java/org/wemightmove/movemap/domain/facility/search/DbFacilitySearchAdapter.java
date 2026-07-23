@@ -16,11 +16,10 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
-public class DbFacilitySearchAdapter implements FacilitySearchPort {
+public class DbFacilitySearchAdapter {
 
     private final FacilityRepository facilityRepository;
 
-    @Override
     public FacilitySimpleListResponse search(String keyword) {
         List<FacilitySimpleListResponse.FacilitySimpleInfo> facilities =
                 facilityRepository.searchFacilitiesByNameAndFacilitySubtype(keyword).stream()

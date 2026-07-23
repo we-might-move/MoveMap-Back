@@ -20,8 +20,12 @@ import java.util.List;
  * <p>
  * 쿼리(GLOBAL §9 — 타입드 빌더만):
  * <pre>
- *   bool.should[ match(name, kw), match(name.ngram, kw), term(facility_subtype, kw) ].minimumShouldMatch(1)
+ *   bool.should[ match(name, kw), match(name.ngram, kw),
+ *                match(facility_subtype, kw), match(facility_subtype.ngram, kw) ].minimumShouldMatch(1)
  * </pre>
+ * {@code facility_subtype} 는 레거시 {@code facility_subtype LIKE '%kw%'}(부분매칭)를 미러링하기 위해
+ * 분석 필드(nori + edge_ngram)로 매칭한다({@code name} 과 동형). 이렇게 하지 않으면 "골프" 검색 시
+ * 골프연습장/파크골프장 같은 하위유형이 누락된다.
  * {@code size=30} 고정, 커서 없음(레거시 시설 검색과 동일). 키워드는 raw(정규화 안 함).
  * <p>
  * GLOBAL §2 — ES 문서 타입({@link FacilityDoc})은 밖으로 새어나가지 않고 {@link FacilitySimpleInfo} 로 매핑된다.
@@ -30,14 +34,13 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
-public class EsFacilitySearchAdapter implements FacilitySearchPort {
+public class EsFacilitySearchAdapter {
 
     private static final String INDEX = SearchDomain.FACILITY.aliasName();
     private static final int SIZE = 30;
 
     private final ElasticsearchClient elasticsearchClient;
 
-    @Override
     public FacilitySimpleListResponse search(String keyword) {
         SearchResponse<FacilityDoc> response;
         try {
@@ -47,7 +50,8 @@ public class EsFacilitySearchAdapter implements FacilitySearchPort {
                     .query(q -> q.bool(b -> b
                             .should(sh -> sh.match(m -> m.field("name").query(keyword)))
                             .should(sh -> sh.match(m -> m.field("name.ngram").query(keyword)))
-                            .should(sh -> sh.term(t -> t.field("facility_subtype").value(keyword)))
+                            .should(sh -> sh.match(m -> m.field("facility_subtype").query(keyword)))
+                            .should(sh -> sh.match(m -> m.field("facility_subtype.ngram").query(keyword)))
                             .minimumShouldMatch("1"))), FacilityDoc.class);
         } catch (IOException e) {
             throw new IllegalStateException("ES 시설 검색 실패: index=" + INDEX, e);

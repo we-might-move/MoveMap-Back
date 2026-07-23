@@ -18,11 +18,10 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
-public class DbProgramSearchAdapter implements ProgramSearchPort {
+public class DbProgramSearchAdapter {
 
     private final ProgramRepository programRepository;
 
-    @Override
     public ProgramSimpleListResponse search(ProgramSearchByKeywordRequest request) {
         String normalizedKeyword = request.normalizedKeyword();
         int size = request.size();

@@ -32,13 +32,12 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
-public class EsProgramSearchAdapter implements ProgramSearchPort {
+public class EsProgramSearchAdapter {
 
     private static final String INDEX = SearchDomain.PROGRAM.aliasName();
 
     private final ElasticsearchClient elasticsearchClient;
 
-    @Override
     public ProgramSimpleListResponse search(ProgramSearchByKeywordRequest request) {
         String keyword = request.normalizedKeyword();
         int size = request.size();

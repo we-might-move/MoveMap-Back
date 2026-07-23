@@ -2,7 +2,6 @@ package org.wemightmove.movemap.domain.facility.service;
 
 import jakarta.persistence.Tuple;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.facility.dto.FacilityInfoProjection;
@@ -23,14 +22,13 @@ import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
-import org.wemightmove.movemap.global.search.SearchMetrics;
+import org.wemightmove.movemap.global.search.SearchEngineRouter;
 import org.wemightmove.movemap.global.search.index.SearchDomain;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -38,13 +36,12 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
 
     private final static int maxResults = 100;
     private static final String DOMAIN = SearchDomain.FACILITY.label();
-    private static final String ENGINE_ES = "es";
 
     private final FacilityRepository facilityRepository;
     private final RegionTypeRepository regionTypeRepository;
     private final MemberRepository memberRepository;
     private final SearchProperties searchProperties;
-    private final SearchMetrics searchMetrics;
+    private final SearchEngineRouter searchEngineRouter;
     private final EsFacilitySearchAdapter esFacilitySearchAdapter;
     private final DbFacilitySearchAdapter dbFacilitySearchAdapter;
 
@@ -117,20 +114,13 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
         // 멤버 검증은 엔진과 무관하게 보존(레거시 계약: 없으면 MEMBER_NOT_FOUND)
         getMember(memberId);
 
-        // 엔진 스위칭 + 계측 fallback(GLOBAL §3): engine=es 면 ES 시도, 어떤 예외든 DB 로 fallback
-        if (ENGINE_ES.equalsIgnoreCase(searchProperties.facility().engine())) {
-            try {
-                return searchMetrics.esLatency(DOMAIN)
-                        .record(() -> esFacilitySearchAdapter.search(keyword));
-            } catch (Exception e) {
-                searchMetrics.esFallback(DOMAIN);
-                log.warn("ES search fallback→DB domain={} keyword_len={} cause={}",
-                        DOMAIN, keyword == null ? 0 : keyword.length(), e.toString());
-                return dbFacilitySearchAdapter.search(keyword);
-            }
-        }
-
-        return dbFacilitySearchAdapter.search(keyword);
+        // 엔진 스위칭 + 계측 fallback(GLOBAL §3)은 SearchEngineRouter 단일 지점에 위임
+        return searchEngineRouter.route(
+                searchProperties.facility().engine(),
+                DOMAIN,
+                keyword == null ? 0 : keyword.length(),
+                () -> esFacilitySearchAdapter.search(keyword),
+                () -> dbFacilitySearchAdapter.search(keyword));
     }
 
     @Override

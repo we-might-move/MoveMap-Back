@@ -24,7 +24,9 @@
         "fields": { "keyword": { "type": "keyword", "ignore_above": 256 },
                     "ngram": { "type": "text", "analyzer": "ac_index", "search_analyzer": "ac_search" } } },
       "facility_type": { "type": "keyword" },
-      "facility_subtype": { "type": "keyword" },
+      "facility_subtype": { "type": "text", "analyzer": "nori_index", "search_analyzer": "nori_search",
+        "fields": { "keyword": { "type": "keyword" },
+                    "ngram": { "type": "text", "analyzer": "ac_index", "search_analyzer": "ac_search" } } },
       "address": { "type": "text", "analyzer": "nori_index", "search_analyzer": "nori_search" },
       "content_hash": { "type": "keyword" },
       "source_updated_at": { "type": "date" }
