@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.wemightmove.movemap.global.search.reconcile.ReconciliationJob;
@@ -20,9 +21,12 @@ import java.time.Instant;
  * bulk op=index 는 동일 {@code _id} 를 덮어쓰므로 재실행도 안전하지만, 불필요한 작업을 피하기 위해 비어있을 때만 색인).
  * 처리 후 {@link ReconciliationJob#markInitialized}로 리컨실 워터마크를 현재 시각으로 전진시켜, 첫 스케줄 리컨실이
  * 이미 색인된 데이터를 통째로 재검증하지 않게 한다.
+ * <p>
+ * {@code movemap.es.enabled=true}일 때만 활성화된다(기본 OFF, {@link IndexBootstrapper} 참고).
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "movemap.es.enabled", havingValue = "true", matchIfMissing = false)
 @Order(1)
 @RequiredArgsConstructor
 public class InitialIndexRunner implements ApplicationRunner {

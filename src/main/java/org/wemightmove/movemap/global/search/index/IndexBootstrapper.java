@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -23,9 +24,14 @@ import java.util.List;
  * <p>
  * 멱등: 인덱스가 이미 존재하면 생성을 건너뛰고, alias가 이미 해당 인덱스를 가리키면 건드리지 않는다.
  * 문서 색인/리컨실리에이션은 T4 범위이며 이 클래스는 다루지 않는다.
+ * <p>
+ * {@code movemap.es.enabled=true}일 때만 활성화된다(기본 OFF). ES가 배제된 기본(db) 프로파일에서
+ * 기동이 도달 불가능한 ES 호스트 때문에 실패하지 않도록 하기 위함이다 — 자세한 배경은
+ * {@link org.wemightmove.movemap.global.config.EsProperties#enabled()} 참고.
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "movemap.es.enabled", havingValue = "true", matchIfMissing = false)
 @Order(0) // DDL/alias 보장 → 데이터 초기 색인(InitialIndexRunner, @Order(1))보다 먼저 실행되어야 함
 @RequiredArgsConstructor
 public class IndexBootstrapper implements ApplicationRunner {

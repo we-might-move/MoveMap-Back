@@ -82,6 +82,7 @@ cors:
 # 컨테이너: ES_HOST env로 override(perf/docker-compose.yml의 app 서비스에서 elasticsearch:9200으로 지정).
 movemap:
   es:
+    enabled: true
     host: ${ES_HOST:localhost:9200}
   search:
     facility:

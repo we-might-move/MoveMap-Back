@@ -2,6 +2,7 @@ package org.wemightmove.movemap.global.search.reconcile;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.wemightmove.movemap.global.config.SearchProperties;
@@ -39,9 +40,14 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * 중첩 실행 방지: {@link Scheduled} 는 기본 단일 스레드라 스택되지 않으나, 향후 스케줄러 풀이 도입돼도 안전하도록
  * {@link AtomicBoolean} 재진입 가드를 둔다.
+ * <p>
+ * {@code movemap.es.enabled=true}일 때만 활성화된다(기본 OFF) — ES가 배제된 기본(db) 프로파일에서
+ * 스케줄 트리거 자체가 존재하지 않도록 빈 등록을 막는다. {@code movemap.search.reconcile.enabled}는
+ * (이 빈이 활성화된 상태에서) 실행 주기별 on/off를 다루는 별개의 스위치다.
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "movemap.es.enabled", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
 public class ReconciliationJob {
 
