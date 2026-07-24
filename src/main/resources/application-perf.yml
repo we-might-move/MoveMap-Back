@@ -28,6 +28,10 @@ spring:
     redis:
       host: localhost         # 컨테이너: SPRING_DATA_REDIS_HOST env로 override
       port: 6379
+      # 캐시는 선택 계층(설계 §4.6): Redis 장애 시 짧은 타임아웃으로 빠르게 실패→loader 우회.
+      # 타임아웃이 없으면 Lettuce 기본(수십 초)만큼 블로킹되어 graceful degradation 이 느려진다.
+      timeout: 250ms
+      connect-timeout: 250ms
 
 jwt:
   secret: "movemap-perf-dummy-secret-key-please-change-0123456789abcdef"   # HS256용 >=32 bytes
@@ -92,3 +96,13 @@ movemap:
     reconcile:
       cron: "0 */15 * * * *"
       enabled: true
+    # 검색 결과 Redis 캐시(Stage 1). perf 프로파일에선 켜서 캐시 경로를 실측한다(코드 기본값은 false).
+    cache:
+      enabled: true
+      ttl: 10m
+      jitter: 60s
+      negative-ttl: 30s
+      local:
+        enabled: false      # Stage 2(CT2)에서 배선
+        max-size: 1000
+        ttl: 60s

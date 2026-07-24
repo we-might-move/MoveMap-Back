@@ -30,10 +30,16 @@ public class SearchMetrics {
     private static final String RECONCILIATION_LAST_SUCCESS = "search_reconciliation_last_success";
     private static final String ES_FALLBACK = "search_es_fallback_total";
     private static final String ES_LATENCY = "search_es_latency";
+    private static final String CACHE_HIT = "search_cache_hit_total";
+    private static final String CACHE_MISS = "search_cache_miss_total";
+    private static final String CACHE_ERROR = "search_cache_error_total";
     private static final String DOMAIN_TAG = "domain";
 
     private final MeterRegistry registry;
     private final Counter bulkItemFailures;
+    private final Counter cacheHit;
+    private final Counter cacheMiss;
+    private final Counter cacheError;
     private final Map<String, AtomicLong> driftGauges = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> lastSuccessGauges = new ConcurrentHashMap<>();
     private final Map<String, Counter> esFallbackCounters = new ConcurrentHashMap<>();
@@ -44,6 +50,30 @@ public class SearchMetrics {
         this.bulkItemFailures = Counter.builder(BULK_ITEM_FAILURES)
                 .description("bulk 색인 응답에서 개별 항목이 실패한 누적 횟수")
                 .register(registry);
+        this.cacheHit = Counter.builder(CACHE_HIT)
+                .description("검색 결과 캐시 히트 누적 횟수")
+                .register(registry);
+        this.cacheMiss = Counter.builder(CACHE_MISS)
+                .description("검색 결과 캐시 미스 누적 횟수")
+                .register(registry);
+        this.cacheError = Counter.builder(CACHE_ERROR)
+                .description("검색 결과 캐시 접근 실패(Redis 장애 등)로 loader 우회한 누적 횟수")
+                .register(registry);
+    }
+
+    /** 검색 캐시 히트 1건을 계수한다. */
+    public void cacheHit() {
+        cacheHit.increment();
+    }
+
+    /** 검색 캐시 미스 1건을 계수한다. */
+    public void cacheMiss() {
+        cacheMiss.increment();
+    }
+
+    /** 검색 캐시 접근 실패 1건을 계수한다(조용한 실패 금지 — 호출부 WARN 로그 병행, 설계 §4.6). */
+    public void cacheError() {
+        cacheError.increment();
     }
 
     /** bulk 응답의 개별 항목 실패 1건을 계수한다(에러는 절대 삼키지 않음 — 호출부에서 ERROR 로그 병행). */
