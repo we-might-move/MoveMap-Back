@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.wemightmove.movemap.global.search.cache.SearchCacheVersion;
 import org.wemightmove.movemap.global.search.reconcile.ReconciliationJob;
 
 import java.time.Instant;
@@ -33,20 +34,27 @@ public class InitialIndexRunner implements ApplicationRunner {
 
     private final BulkReindexer bulkReindexer;
     private final ReconciliationJob reconciliationJob;
+    private final SearchCacheVersion searchCacheVersion;
 
     @Override
     public void run(ApplicationArguments args) {
+        boolean anyIndexed = false;
         for (SearchDomain domain : SearchDomain.values()) {
             long existing = bulkReindexer.esCount(domain);
             if (existing == 0) {
                 log.info("초기 색인: 인덱스 비어있음 → 전량 색인 실행: domain={}, index={}",
                         domain.label(), domain.indexName());
                 bulkReindexer.reindex(domain);
+                anyIndexed = true;
             } else {
                 log.info("초기 색인: 이미 문서 {}건 존재 → 스킵: domain={}, index={}",
                         existing, domain.label(), domain.indexName());
             }
             reconciliationJob.markInitialized(domain, Instant.now());
+        }
+        // 인덱스를 새로 채웠으면(예: ES 초기화 후 재기동) 이전에 남아있을 수 있는 캐시를 무효화한다(설계 §4.4).
+        if (anyIndexed) {
+            searchCacheVersion.bump();
         }
     }
 }

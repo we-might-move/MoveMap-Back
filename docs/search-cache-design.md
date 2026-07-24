@@ -182,6 +182,7 @@ sequenceDiagram
 
 - 캐시 조회/저장을 `try/catch`로 감싸고, Redis 예외 시 **로그+메트릭 후 그냥 통과**(라우터로 직접 검색).
 - 이건 기존 **엔진 fallback(ES 실패→DB)과 똑같은 철학** — 계층이 하나 늘었을 뿐. 조용한 실패 금지(hit/miss/error 다 계측).
+- ⚠️ **전제조건(실측으로 확인): 짧은 Redis 커맨드 타임아웃 필수.** `spring.data.redis.timeout`/`connect-timeout`을 짧게(예: **250ms**) 설정하지 않으면, Redis가 죽었을 때 Lettuce 기본값 때문에 요청이 **20초+ 블록**되어 "graceful"이 무너진다(타임아웃 설정 후 0.3초 우회 확인). → **`cache.enabled=true`를 켜는 모든 프로파일은 이 타임아웃을 반드시 함께 설정**한다(캐시 켜기의 롤아웃 전제조건).
 
 ### 4.7 어디에, 어떻게 끼우나 (코드 스케치)
 
