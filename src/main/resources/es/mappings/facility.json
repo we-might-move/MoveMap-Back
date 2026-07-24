@@ -1,0 +1,35 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "tokenizer": { "nori_user": { "type": "nori_tokenizer", "decompound_mode": "mixed" } },
+      "filter": {
+        "nori_pos": { "type": "nori_part_of_speech", "stoptags": ["E","IC","J","MAG","MAJ","MM","SP","SSC","SSO","SC","SE","VCP","VCN","XSA","XSN","XSV"] },
+        "edge_ngram_filter": { "type": "edge_ngram", "min_gram": 2, "max_gram": 20 }
+      },
+      "analyzer": {
+        "nori_index":  { "type": "custom", "tokenizer": "nori_user", "filter": ["nori_pos","lowercase"] },
+        "nori_search": { "type": "custom", "tokenizer": "nori_user", "filter": ["nori_pos","lowercase"] },
+        "ac_index":    { "type": "custom", "tokenizer": "nori_user", "filter": ["nori_pos","lowercase","edge_ngram_filter"] },
+        "ac_search":   { "type": "custom", "tokenizer": "nori_user", "filter": ["nori_pos","lowercase"] }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "id": { "type": "long" },
+      "name": { "type": "text", "analyzer": "nori_index", "search_analyzer": "nori_search",
+        "fields": { "keyword": { "type": "keyword", "ignore_above": 256 },
+                    "ngram": { "type": "text", "analyzer": "ac_index", "search_analyzer": "ac_search" } } },
+      "facility_type": { "type": "keyword" },
+      "facility_subtype": { "type": "text", "analyzer": "nori_index", "search_analyzer": "nori_search",
+        "fields": { "keyword": { "type": "keyword" },
+                    "ngram": { "type": "text", "analyzer": "ac_index", "search_analyzer": "ac_search" } } },
+      "address": { "type": "text", "analyzer": "nori_index", "search_analyzer": "nori_search" },
+      "content_hash": { "type": "keyword" },
+      "source_updated_at": { "type": "date" }
+    }
+  }
+}

@@ -7,10 +7,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.wemightmove.movemap.global.config.CorsConfigProperties;
+import org.wemightmove.movemap.global.config.EsProperties;
+import org.wemightmove.movemap.global.config.SearchProperties;
 
 @SpringBootApplication
 @EnableJpaAuditing
-@EnableConfigurationProperties(CorsConfigProperties.class)
+@EnableConfigurationProperties({CorsConfigProperties.class, EsProperties.class, SearchProperties.class})
 @OpenAPIDefinition(
         servers = {
                 @Server(url = "${springdoc.swagger-ui.production}", description = "Production Server"),

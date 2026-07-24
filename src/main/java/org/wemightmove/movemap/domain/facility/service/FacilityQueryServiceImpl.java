@@ -2,7 +2,6 @@ package org.wemightmove.movemap.domain.facility.service;
 
 import jakarta.persistence.Tuple;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wemightmove.movemap.domain.facility.dto.FacilityInfoProjection;
@@ -13,29 +12,38 @@ import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityMarkerResponse;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilitySimpleListResponse;
 import org.wemightmove.movemap.domain.facility.repository.FacilityRepository;
+import org.wemightmove.movemap.domain.facility.search.DbFacilitySearchAdapter;
+import org.wemightmove.movemap.domain.facility.search.EsFacilitySearchAdapter;
 import org.wemightmove.movemap.domain.member.entity.Member;
 import org.wemightmove.movemap.domain.member.repository.MemberRepository;
+import org.wemightmove.movemap.global.config.SearchProperties;
 import org.wemightmove.movemap.global.entity.RegionType;
 import org.wemightmove.movemap.global.enums.FacilityType;
 import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
+import org.wemightmove.movemap.global.search.SearchEngineRouter;
+import org.wemightmove.movemap.global.search.index.SearchDomain;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class FacilityQueryServiceImpl implements FacilityQueryService {
 
     private final static int maxResults = 100;
+    private static final String DOMAIN = SearchDomain.FACILITY.label();
 
     private final FacilityRepository facilityRepository;
     private final RegionTypeRepository regionTypeRepository;
     private final MemberRepository memberRepository;
+    private final SearchProperties searchProperties;
+    private final SearchEngineRouter searchEngineRouter;
+    private final EsFacilitySearchAdapter esFacilitySearchAdapter;
+    private final DbFacilitySearchAdapter dbFacilitySearchAdapter;
 
     @Override
     public FacilityMarkerResponse getMarkers(Long memberId) {
@@ -103,12 +111,16 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
 
     @Override
     public FacilitySimpleListResponse searchFacilityListByKeyword(Long memberId, String keyword) {
-        Member member = getMember(memberId);
+        // 멤버 검증은 엔진과 무관하게 보존(레거시 계약: 없으면 MEMBER_NOT_FOUND)
+        getMember(memberId);
 
-        List<FacilitySimpleListResponse.FacilitySimpleInfo> facilities = facilityRepository.searchFacilitiesByNameAndFacilitySubtype(keyword).stream()
-                .map(FacilitySimpleListResponse.FacilitySimpleInfo::of).toList();
-
-        return new FacilitySimpleListResponse(facilities);
+        // 엔진 스위칭 + 계측 fallback(GLOBAL §3)은 SearchEngineRouter 단일 지점에 위임
+        return searchEngineRouter.route(
+                searchProperties.facility().engine(),
+                DOMAIN,
+                keyword == null ? 0 : keyword.length(),
+                () -> esFacilitySearchAdapter.search(keyword),
+                () -> dbFacilitySearchAdapter.search(keyword));
     }
 
     @Override

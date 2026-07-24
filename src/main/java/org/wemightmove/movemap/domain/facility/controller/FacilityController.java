@@ -4,9 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.wemightmove.movemap.domain.facility.dto.request.*;
 import org.wemightmove.movemap.domain.facility.dto.response.FacilityListResponse;
@@ -23,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
+@Validated
 @Tag(name = "Facility")
 @RequiredArgsConstructor
 @RequestMapping("/facilities")
@@ -174,7 +178,10 @@ public class FacilityController {
     )
     public ResponseEntity<FacilitySimpleListResponse> searchFacilityListByKeyword(
             @AuthenticationPrincipal CustomUserDetails member,
-            @RequestParam(value = "keyword", required = false) String keyword
+            @RequestParam(value = "keyword")
+            @NotBlank(message = "검색어를 입력해주세요")
+            @Size(max = 50, message = "검색어는 50자 이하여야 합니다")
+            String keyword
     ) {
         Long memberId = member.getId();
 
