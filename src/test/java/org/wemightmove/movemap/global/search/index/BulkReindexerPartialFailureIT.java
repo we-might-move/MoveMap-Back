@@ -26,8 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * (매핑에 없는 필드를 가진) 문서 1건을 함께 보내, 실패 건수가 삼켜지지 않고 반환값·메트릭·로그 3곳 모두에
  * 표면화되는지 확인한다.
  * <p>
- * {@link BulkReindexer}는 리컨실 델타 조회 등에서만 {@code EntityManager}가 필요하고 {@code bulkIndex}
- * 자체는 사용하지 않으므로, 이 테스트에서는 {@code entityManager=null}로 직접 생성한다(Spring 컨텍스트 불필요).
+ * {@link BulkReindexer}는 리컨실 델타 조회 등에서만 {@code EntityManager}가 필요하고, {@code SearchCacheVersion}은
+ * {@code reindexAll()}(전량 재색인 완료 훅)에서만 쓰인다. {@code bulkIndex} 자체는 둘 다 사용하지 않으므로, 이
+ * 테스트에서는 {@code entityManager=null}/{@code searchCacheVersion=null}로 직접 생성한다(Spring 컨텍스트 불필요).
  */
 class BulkReindexerPartialFailureIT extends EsContainerSupport {
 
@@ -58,7 +59,7 @@ class BulkReindexerPartialFailureIT extends EsContainerSupport {
     void bulkIndex_partialFailure_isNotSwallowed_surfacedInReturnValue_metric_andLog() {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         SearchMetrics searchMetrics = new SearchMetrics(registry);
-        BulkReindexer bulkReindexer = new BulkReindexer(null, ES_CLIENT, searchMetrics);
+        BulkReindexer bulkReindexer = new BulkReindexer(null, ES_CLIENT, searchMetrics, null);
 
         long goodId = 9001L;
         long badId = 9002L;

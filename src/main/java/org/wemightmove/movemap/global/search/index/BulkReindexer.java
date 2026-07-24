@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.wemightmove.movemap.global.search.SearchMetrics;
+import org.wemightmove.movemap.global.search.cache.SearchCacheVersion;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -45,15 +46,19 @@ public class BulkReindexer {
     private final EntityManager entityManager;
     private final ElasticsearchClient elasticsearchClient;
     private final SearchMetrics searchMetrics;
+    private final SearchCacheVersion searchCacheVersion;
 
     /**
      * 모든 도메인을 전량 재색인하고 도메인별 색인 문서 수를 반환한다(관리 엔드포인트/초기 색인 요약용).
+     * <p>
+     * 재색인이 끝나면 검색 캐시 버전을 bump 해 옛 캐시가 자동 무효화되게 한다(설계 §4.4). 캐시 비활성이면 no-op.
      */
     public Map<String, Long> reindexAll() {
         Map<String, Long> summary = new LinkedHashMap<>();
         for (SearchDomain domain : SearchDomain.values()) {
             summary.put(domain.label(), reindex(domain));
         }
+        searchCacheVersion.bump();
         return summary;
     }
 

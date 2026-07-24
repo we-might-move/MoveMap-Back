@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.wemightmove.movemap.global.config.SearchProperties;
 import org.wemightmove.movemap.global.search.SearchMetrics;
+import org.wemightmove.movemap.global.search.cache.SearchCacheVersion;
 import org.wemightmove.movemap.global.search.index.BulkReindexer;
 import org.wemightmove.movemap.global.search.index.IndexedDoc;
 import org.wemightmove.movemap.global.search.index.SearchDomain;
@@ -54,6 +55,7 @@ public class ReconciliationJob {
     private final SearchProperties searchProperties;
     private final BulkReindexer bulkReindexer;
     private final SearchMetrics searchMetrics;
+    private final SearchCacheVersion searchCacheVersion;
 
     private final Map<SearchDomain, AtomicReference<Instant>> watermarks = initialWatermarks();
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -110,6 +112,12 @@ public class ReconciliationJob {
             } else {
                 log.info("리컨실 완료: domain={}, pgCount={}, esCount={}, drift=0, deltaReindexed={}",
                         domain.label(), pgCount, esCount, reindexed);
+            }
+
+            // 리컨실이 ES 문서를 실제로 고쳤으면 캐시 버전을 올려 옛 캐시를 무효화한다(설계 §4.4).
+            // reindexed==0(대부분의 no-op 주기)이면 bump하지 않아 불필요한 무효화를 피한다.
+            if (reindexed > 0) {
+                searchCacheVersion.bump();
             }
         } catch (RuntimeException e) {
             // 한 도메인 실패가 다른 도메인/다음 주기를 막지 않도록 격리(다음 주기에 재시도).

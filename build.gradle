@@ -39,6 +39,9 @@ dependencies {
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+    // Caffeine (검색 결과 로컬 2-tier 캐시, Stage 2 — 설계 §5.3). 버전은 Boot BOM이 관리.
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     // JSON 처리
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'

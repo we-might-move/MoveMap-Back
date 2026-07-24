@@ -23,6 +23,9 @@ import org.wemightmove.movemap.global.exception.CustomException;
 import org.wemightmove.movemap.global.exception.ErrorCode;
 import org.wemightmove.movemap.global.repository.RegionTypeRepository;
 import org.wemightmove.movemap.global.search.SearchEngineRouter;
+import org.wemightmove.movemap.global.search.cache.SearchCacheKey;
+import org.wemightmove.movemap.global.search.cache.SearchCacheVersion;
+import org.wemightmove.movemap.global.search.cache.SearchResultCache;
 import org.wemightmove.movemap.global.search.index.SearchDomain;
 
 import java.math.BigDecimal;
@@ -42,6 +45,8 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
     private final MemberRepository memberRepository;
     private final SearchProperties searchProperties;
     private final SearchEngineRouter searchEngineRouter;
+    private final SearchResultCache searchResultCache;
+    private final SearchCacheVersion searchCacheVersion;
     private final EsFacilitySearchAdapter esFacilitySearchAdapter;
     private final DbFacilitySearchAdapter dbFacilitySearchAdapter;
 
@@ -114,13 +119,17 @@ public class FacilityQueryServiceImpl implements FacilityQueryService {
         // 멤버 검증은 엔진과 무관하게 보존(레거시 계약: 없으면 MEMBER_NOT_FOUND)
         getMember(memberId);
 
-        // 엔진 스위칭 + 계측 fallback(GLOBAL §3)은 SearchEngineRouter 단일 지점에 위임
-        return searchEngineRouter.route(
-                searchProperties.facility().engine(),
-                DOMAIN,
-                keyword == null ? 0 : keyword.length(),
-                () -> esFacilitySearchAdapter.search(keyword),
-                () -> dbFacilitySearchAdapter.search(keyword));
+        // 엔진 스위칭 + 계측 fallback(GLOBAL §3)은 SearchEngineRouter 단일 지점에 위임.
+        // 그 앞에 검색 결과 cache-aside 계층을 얹는다(설계 §4.7). enabled=false 면 캐시를 완전히 우회한다.
+        String engine = searchProperties.facility().engine();
+        String cacheKey = SearchCacheKey.facility(searchCacheVersion.current(), engine, keyword);
+        return searchResultCache.getOrLoad(cacheKey, FacilitySimpleListResponse.class,
+                () -> searchEngineRouter.route(
+                        engine,
+                        DOMAIN,
+                        keyword == null ? 0 : keyword.length(),
+                        () -> esFacilitySearchAdapter.search(keyword),
+                        () -> dbFacilitySearchAdapter.search(keyword)));
     }
 
     @Override
