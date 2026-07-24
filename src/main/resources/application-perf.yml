@@ -103,6 +103,6 @@ movemap:
       jitter: 60s
       negative-ttl: 30s
       local:
-        enabled: false      # Stage 2(CT2)에서 배선
+        enabled: true       # Stage 2(CT2) — perf 프로파일에선 켜서 2-tier 경로를 실측한다(코드 기본값은 false)
         max-size: 1000
         ttl: 60s

@@ -33,6 +33,7 @@ public class SearchMetrics {
     private static final String CACHE_HIT = "search_cache_hit_total";
     private static final String CACHE_MISS = "search_cache_miss_total";
     private static final String CACHE_ERROR = "search_cache_error_total";
+    private static final String CACHE_LOCAL_HIT = "search_cache_local_hit_total";
     private static final String DOMAIN_TAG = "domain";
 
     private final MeterRegistry registry;
@@ -40,6 +41,7 @@ public class SearchMetrics {
     private final Counter cacheHit;
     private final Counter cacheMiss;
     private final Counter cacheError;
+    private final Counter cacheLocalHit;
     private final Map<String, AtomicLong> driftGauges = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> lastSuccessGauges = new ConcurrentHashMap<>();
     private final Map<String, Counter> esFallbackCounters = new ConcurrentHashMap<>();
@@ -59,6 +61,9 @@ public class SearchMetrics {
         this.cacheError = Counter.builder(CACHE_ERROR)
                 .description("검색 결과 캐시 접근 실패(Redis 장애 등)로 loader 우회한 누적 횟수")
                 .register(registry);
+        this.cacheLocalHit = Counter.builder(CACHE_LOCAL_HIT)
+                .description("검색 결과 로컬(Caffeine) 캐시 히트 누적 횟수 — Stage 2 2-tier(설계 §5)")
+                .register(registry);
     }
 
     /** 검색 캐시 히트 1건을 계수한다. */
@@ -74,6 +79,11 @@ public class SearchMetrics {
     /** 검색 캐시 접근 실패 1건을 계수한다(조용한 실패 금지 — 호출부 WARN 로그 병행, 설계 §4.6). */
     public void cacheError() {
         cacheError.increment();
+    }
+
+    /** 검색 결과 로컬(Caffeine) 캐시 히트 1건을 계수한다(Stage 2, 설계 §5). Redis 는 조회하지 않았다는 뜻. */
+    public void cacheLocalHit() {
+        cacheLocalHit.increment();
     }
 
     /** bulk 응답의 개별 항목 실패 1건을 계수한다(에러는 절대 삼키지 않음 — 호출부에서 ERROR 로그 병행). */
