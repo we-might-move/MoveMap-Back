@@ -33,7 +33,12 @@ class EsFacilitySearchAdapterIT extends EsContainerSupport {
     private static final long SWIM_FACILITY_ID = 101L;
     private static final long GOLF_SUBTYPE_FACILITY_ID = 102L; // 이름에는 "골프"가 없음 — subtype 매칭 전용
     private static final long GANGNAM_TENNIS_FACILITY_ID = 103L;
-    private static final int FIXTURE_COUNT = 10;
+    private static final long MAPO_SOCCER_FACILITY_ID = 104L; // AND decoy: "축구" subtype 이지만 이름/주소에 "강남" 없음
+    private static final int FIXTURE_COUNT = 12;
+
+    // AND(cross_fields) 검증용 both-match/decoy.
+    private static final long GANGNAM_SOCCER_GROUND_ID = 111L; // both-match: name 에 "강남", subtype 에 "축구"
+    private static final long GANGNAM_PARK_NO_SOCCER_ID = 112L; // decoy: name 에 "강남"만 있고 "축구" 없음
 
     private static EsFacilitySearchAdapter adapter;
 
@@ -53,6 +58,8 @@ class EsFacilitySearchAdapterIT extends EsContainerSupport {
         docs.add(facility(108L, "은평필라테스", "FITNESS", "필라테스", "서울 은평구"));
         docs.add(facility(109L, "종로탁구장", "BALL_GAME", "탁구", "서울 종로구"));
         docs.add(facility(110L, "용산댄스홀", "DANCE", "댄스", "서울 용산구"));
+        docs.add(facility(GANGNAM_SOCCER_GROUND_ID, "강남종합운동장", "BALL_GAME", "축구", "서울 강남구"));
+        docs.add(facility(GANGNAM_PARK_NO_SOCCER_ID, "강남한강공원", "LEISURE", "종합", "서울 강남구"));
 
         bulkIndex(INDEX, docs);
     }
@@ -112,9 +119,10 @@ class EsFacilitySearchAdapterIT extends EsContainerSupport {
         assertThatCode(() -> adapter.search(wildcardish)).doesNotThrowAnyException();
 
         FacilitySimpleListResponse response = adapter.search(wildcardish);
-        // "강남" 토큰을 이름에 포함하는 시설(강남테니스장)만 매치 — 전체 10건이 아님.
+        // "강남" 토큰을 이름에 포함하는 시설(강남테니스장·강남종합운동장·강남한강공원)만 매치 — 전체 12건이 아님.
         Set<Long> ids = response.facilities().stream().map(FacilitySimpleInfo::id).collect(Collectors.toSet());
-        assertThat(ids).containsExactly(GANGNAM_TENNIS_FACILITY_ID);
+        assertThat(ids).containsExactlyInAnyOrder(
+                GANGNAM_TENNIS_FACILITY_ID, GANGNAM_SOCCER_GROUND_ID, GANGNAM_PARK_NO_SOCCER_ID);
         assertThat(response.facilities().size()).isLessThan(FIXTURE_COUNT);
     }
 
@@ -132,5 +140,34 @@ class EsFacilitySearchAdapterIT extends EsContainerSupport {
         assertThat(swim.facilityType()).isEqualTo(FacilityType.AQUATIC.getName());
         assertThat(swim.facilitySubtype()).isEqualTo("수영장");
         assertThat(swim.address()).isEqualTo("서울 송파구");
+    }
+
+    /**
+     * (6) AND-first(cross_fields): "강남 축구" 는 name 에 "강남"(id 103,111,112)과 facility_subtype 에
+     * "축구"(id 104,111)가 서로 다른 필드에 나뉘어 있어도 두 토큰을 모두 요구해야 한다 — id 111(강남종합운동장,
+     * subtype=축구)만 매치하고, 같은 "축구" subtype 이지만 다른 시설(마포축구공원, id 104)인 decoy 와
+     * "강남"만 있고 "축구"가 없는 decoy(id 112)는 제외되어야 한다.
+     */
+    @Test
+    void andFirst_multiTokenQuery_requiresBothTokensAcrossFields_excludesDecoysAtOtherFacility() {
+        FacilitySimpleListResponse response = adapter.search("강남 축구");
+
+        Set<Long> ids = response.facilities().stream().map(FacilitySimpleInfo::id).collect(Collectors.toSet());
+        assertThat(ids).containsExactly(GANGNAM_SOCCER_GROUND_ID);
+        assertThat(ids).doesNotContain(MAPO_SOCCER_FACILITY_ID, GANGNAM_PARK_NO_SOCCER_ID);
+    }
+
+    /**
+     * (7) OR 폴백: "은평 댄스" 는 어떤 문서도 "은평"(name, id 108)과 "댄스"(name/subtype, id 110)를
+     * 동시에 갖지 않아 AND(cross_fields) 가 0건이다 — 이때 기존 OR 쿼리로 폴백해 빈 화면이 아니라
+     * "은평" 또는 "댄스" 토큰을 포함하는 문서들을 반환해야 한다.
+     */
+    @Test
+    void orFallback_multiTokenQueryWithNoBothMatchDoc_returnsNonEmptyOrResult() {
+        FacilitySimpleListResponse response = adapter.search("은평 댄스");
+
+        Set<Long> ids = response.facilities().stream().map(FacilitySimpleInfo::id).collect(Collectors.toSet());
+        assertThat(ids).isNotEmpty();
+        assertThat(ids).containsExactlyInAnyOrder(108L, 110L);
     }
 }

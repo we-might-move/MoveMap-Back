@@ -41,6 +41,12 @@ class EsProgramSearchAdapterIT extends EsContainerSupport {
     private static final long PAGE_FIXTURE_BASE_ID = 1000L;
     private static final int PAGE_FIXTURE_COUNT = 25;
 
+    // AND(cross_fields) 검증용 decoy: id=7 과 같은 "축구" 토큰이지만 facility_name 에 "강남" 이 없음.
+    private static final long SOCCER_AT_OTHER_FACILITY_ID = 11L;
+
+    // 대소문자 무시(lowercase 필터) 검증용: 영어 토큰 "CrossFit"을 이름에 가진, 강남과 무관한 시설.
+    private static final long CROSSFIT_PROGRAM_ID = 12L;
+
     private static EsProgramSearchAdapter adapter;
 
     @BeforeAll
@@ -59,6 +65,11 @@ class EsProgramSearchAdapterIT extends EsContainerSupport {
         docs.add(program(8L, "농구교실", "강동구민센터", "농구", "서울 강동구"));
         docs.add(program(9L, "줄넘기교실", "강동구민센터", "줄넘기", "서울 강동구"));
         docs.add(program(10L, "댄스스포츠", "노원구민센터", "댄스", "서울 노원구"));
+        // AND(cross_fields) 검증용 decoy: id=7(축구클래스@강남스포츠센터)와 같은 "축구" 토큰이지만
+        // facility_name 에 "강남" 이 없는 다른 시설 — "강남 축구" AND 쿼리가 이 decoy 를 제외해야 함.
+        docs.add(program(11L, "축구교실", "분당스포츠센터", "축구", "경기 분당구"));
+        // 대소문자 무시 검증용: 영어 이름 "CrossFit"(강남·기존 키워드와 무관한 시설/주소).
+        docs.add(program(CROSSFIT_PROGRAM_ID, "CrossFit", "성수짐", "크로스핏", "서울 성동구"));
 
         for (int i = 0; i < PAGE_FIXTURE_COUNT; i++) {
             long id = PAGE_FIXTURE_BASE_ID + i;
@@ -161,5 +172,49 @@ class EsProgramSearchAdapterIT extends EsContainerSupport {
         assertThat(first.facilitySubtype()).isEqualTo("테스트종목");
         assertThat(first.address()).isEqualTo("서울 테스트구");
         assertThat(first.programName()).startsWith("페이지네이션프로그램");
+    }
+
+    /**
+     * (6) AND-first(cross_fields): "강남 축구" 는 facility_name 에 "강남"(id 1,3,7)과 name 에 "축구"(id 7,11)가
+     * 서로 다른 필드에 나뉘어 있어도 두 토큰을 모두 요구해야 한다 — id 7(축구클래스@강남스포츠센터)만 매치하고,
+     * 같은 "축구" 토큰이지만 다른 시설(분당스포츠센터)인 decoy(id 11)는 "강남"이 없어 제외되어야 한다.
+     */
+    @Test
+    void andFirst_multiTokenQuery_requiresBothTokensAcrossFields_excludesDecoyAtOtherFacility() {
+        ProgramSimpleListResponse response = adapter.search(request("강남 축구", 20, null));
+
+        Set<Long> ids = response.programs().stream().map(ProgramSimpleItem::id).collect(Collectors.toSet());
+        assertThat(ids).containsExactly(7L);
+        assertThat(ids).doesNotContain(SOCCER_AT_OTHER_FACILITY_ID);
+    }
+
+    /**
+     * (7) OR 폴백: "마포 수영" 은 어떤 문서도 "마포"(facility_name, id 5,6)와 "수영"(name, id 1,2)을
+     * 동시에 갖지 않아 AND(cross_fields) 가 0건이다 — 이때 기존 OR 쿼리로 폴백해 빈 화면이 아니라
+     * "마포" 또는 "수영" 토큰을 포함하는 문서들을 반환해야 한다.
+     */
+    @Test
+    void orFallback_multiTokenQueryWithNoBothMatchDoc_returnsNonEmptyOrResult() {
+        ProgramSimpleListResponse response = adapter.search(request("마포 수영", 20, null));
+
+        Set<Long> ids = response.programs().stream().map(ProgramSimpleItem::id).collect(Collectors.toSet());
+        assertThat(ids).isNotEmpty();
+        assertThat(ids).containsExactlyInAnyOrder(SWIM_PROGRAM_ID, SWIM_KIDS_PROGRAM_ID, 5L, 6L);
+    }
+
+    /**
+     * (8) 대소문자 무시(분석기 lowercase 필터): 영어 이름 "CrossFit"을 소문자("crossfit")로 검색하든
+     * 대문자("CROSSFIT")로 검색하든 동일하게 매치되고 결과 집합이 완전히 같아야 한다.
+     * index·search 양쪽 분석기에 lowercase 필터가 걸려 있음을 실측으로 검증한다.
+     */
+    @Test
+    void caseInsensitive_englishKeyword_uppercaseAndLowercaseReturnSameResult() {
+        Set<Long> lower = adapter.search(request("crossfit", 20, null))
+                .programs().stream().map(ProgramSimpleItem::id).collect(Collectors.toSet());
+        Set<Long> upper = adapter.search(request("CROSSFIT", 20, null))
+                .programs().stream().map(ProgramSimpleItem::id).collect(Collectors.toSet());
+
+        assertThat(lower).contains(CROSSFIT_PROGRAM_ID);
+        assertThat(upper).isEqualTo(lower);
     }
 }
